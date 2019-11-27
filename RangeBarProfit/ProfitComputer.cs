@@ -14,6 +14,7 @@ namespace RangeBarProfit
         private readonly string _baseSymbol;
         private readonly double _orderSize;
         private readonly double _feePercentage;
+        private readonly int? _maxLimitInventory;
 
         private readonly List<TradeModel> _trades = new List<TradeModel>();
         private readonly List<RangeBarModel> _bars = new List<RangeBarModel>();
@@ -22,11 +23,12 @@ namespace RangeBarProfit
         private int _maxInventory;
 
         public ProfitComputer(string baseSymbol, string quoteSymbol, double orderSize, 
-            IStrategy strategy, double feePercentage)
+            IStrategy strategy, double feePercentage, int? maxLimitInventory)
         {
             _orderSize = orderSize;
             _strategy = strategy;
             _feePercentage = feePercentage;
+            _maxLimitInventory = maxLimitInventory;
             _quoteSymbol = quoteSymbol;
             _baseSymbol = baseSymbol;
         }
@@ -55,6 +57,11 @@ namespace RangeBarProfit
                     }
                     else
                     {
+                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                        {
+                            // inventory reached, do nothing
+                            continue;
+                        }
                         _currentInventory++;
                     }
 
@@ -77,6 +84,11 @@ namespace RangeBarProfit
                     }
                     else
                     {
+                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                        {
+                            // inventory reached, do nothing
+                            continue;
+                        }
                         _currentInventory--;
                     }
 

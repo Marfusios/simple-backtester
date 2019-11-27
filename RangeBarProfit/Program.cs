@@ -104,13 +104,15 @@ namespace RangeBarProfit
 
         private static ProfitComputer RunBacktest(BacktestConfig backtest, IStrategy strategy)
         {
-            var files = LoadAllFiles(backtest.DirectoryPath);//.Skip(1).Take(1).ToArray();
+            var files = LoadAllFiles(backtest.DirectoryPath);//.Take(1).ToArray();
             var computer = new ProfitComputer(
                 backtest.BaseSymbol, 
                 backtest.QuoteSymbol, 
                 backtest.Amount, 
                 strategy,
-                backtest.FeePercentage);
+                backtest.FeePercentage,
+                backtest.MaxInventory
+                );
 
             Console.WriteLine();
             Console.WriteLine("=====================================================================");

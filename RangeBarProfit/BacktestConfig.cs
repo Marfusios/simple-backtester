@@ -8,6 +8,7 @@
         public string DirectoryPath { get; set; }
 
         public double FeePercentage { get; set; } = 0.00075;
+        public int? MaxInventory { get; set; } = 2;
 
         public bool Visualize { get; set; } = true;
         public bool VisualizeByTime { get; set; } = false;
