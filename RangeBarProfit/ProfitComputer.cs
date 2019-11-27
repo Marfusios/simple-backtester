@@ -13,25 +13,33 @@ namespace RangeBarProfit
         private readonly string _quoteSymbol;
         private readonly string _baseSymbol;
         private readonly double _orderSize;
+        private readonly double _feePercentage;
 
         private readonly List<TradeModel> _trades = new List<TradeModel>();
+        private readonly List<RangeBarModel> _bars = new List<RangeBarModel>();
 
         private int _currentInventory;
         private int _maxInventory;
 
         public ProfitComputer(string baseSymbol, string quoteSymbol, double orderSize, 
-            IStrategy strategy)
+            IStrategy strategy, double feePercentage)
         {
             _orderSize = orderSize;
             _strategy = strategy;
+            _feePercentage = feePercentage;
             _quoteSymbol = quoteSymbol;
             _baseSymbol = baseSymbol;
         }
+
+        public TradeModel[] Trades => _trades.ToArray();
+        public RangeBarModel[] Bars => _bars.ToArray();
 
         public void ProcessBars(RangeBarModel[] bars)
         {
             foreach (var bar in bars)
             {
+                _bars.Add(bar);
+
                 var decision = _strategy.Decide(bar);
                 if(decision == Action.Nothing)
                     continue;
@@ -52,6 +60,7 @@ namespace RangeBarProfit
 
                     var trade = new TradeModel()
                     {
+                        Timestamp = bar.Timestamp,
                         Price = bar.Ask,
                         Amount = orderSize
                     };
@@ -74,6 +83,7 @@ namespace RangeBarProfit
                     
                     var trade = new TradeModel()
                     {
+                        Timestamp = bar.Timestamp,
                         Price = bar.Bid,
                         Amount = orderSize * (-1)
                     };
@@ -91,8 +101,10 @@ namespace RangeBarProfit
 
             if (_currentInventory > 0)
             {
+                // sell trade
                 var trade = new TradeModel()
                 {
+                    Timestamp = bar.Timestamp,
                     Price = bar.Bid,
                     Amount = Math.Abs(_currentInventory * _orderSize) * (-1)
                 };
@@ -100,8 +112,10 @@ namespace RangeBarProfit
             }
             if (_currentInventory < 0)
             {
+                // buy trade
                 var trade = new TradeModel()
                 {
+                    Timestamp = bar.Timestamp,
                     Price = bar.Bid,
                     Amount = Math.Abs(_currentInventory * _orderSize)
                 };
@@ -125,10 +139,25 @@ namespace RangeBarProfit
 
             var pnl = sold - bought;
 
+            var fee = bought * _feePercentage + sold * _feePercentage;
+            var pnlWithFee = pnl - fee;
+
             return $"Trades {_trades.Count} " +
                    $"(b: {buys.Length}/{avgBuy:#.00} {_quoteSymbol}, s: {sells.Length}/{avgSell:#.00} {_quoteSymbol}), " +
                    $"Inv: {_currentInventory*_orderSize} {_baseSymbol} (max: {_maxInventory*_orderSize} {_baseSymbol}), " +
-                   $"Pnl: {pnl:#.00} {_quoteSymbol}";
+                   $"Pnl: {pnl:#.00} {_quoteSymbol} (with fee: {pnlWithFee:#.00} {_quoteSymbol})";
+        }
+
+        public double GetPnl()
+        {
+            var buys = _trades.Where(x => x.Amount > 0).ToArray();
+            var sells = _trades.Where(x => x.Amount < 0).ToArray();
+
+            var bought = buys.Sum(x => x.Price * Math.Abs(x.Amount));
+            var sold = sells.Sum(x => x.Price * Math.Abs(x.Amount));
+
+            var pnl = sold - bought;
+            return pnl;
         }
 
         private void LogTrade(TradeModel trade)

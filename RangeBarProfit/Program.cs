@@ -21,63 +21,72 @@ namespace RangeBarProfit
                     BaseSymbol = "BTC",
                     QuoteSymbol = "USD",
                     Amount = 1,
-                    DirectoryPath = Path.Combine(baseDir, "xbtusd-002")
+                    DirectoryPath = Path.Combine(baseDir, "xbtusd-002"),
+                    Visualize = true
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "BTC",
                     QuoteSymbol = "USD",
                     Amount = 1,
-                    DirectoryPath = Path.Combine(baseDir, "xbtusd-001")
+                    DirectoryPath = Path.Combine(baseDir, "xbtusd-001"),
+                    Visualize = true
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "BTC",
                     QuoteSymbol = "USD",
                     Amount = 1,
-                    DirectoryPath = Path.Combine(baseDir, "xbtusd-0005")
+                    DirectoryPath = Path.Combine(baseDir, "xbtusd-0005"),
+                    Visualize = false
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "BTC",
                     QuoteSymbol = "USD",
                     Amount = 1,
-                    DirectoryPath = Path.Combine(baseDir, "xbth20-002")
+                    DirectoryPath = Path.Combine(baseDir, "xbth20-002"),
+                    Visualize = true
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "BTC",
                     QuoteSymbol = "USD",
                     Amount = 1,
-                    DirectoryPath = Path.Combine(baseDir, "xbth20-001")
+                    DirectoryPath = Path.Combine(baseDir, "xbth20-001"),
+                    Visualize = true
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "BTC",
                     QuoteSymbol = "USD",
                     Amount = 1,
-                    DirectoryPath = Path.Combine(baseDir, "xbth20-0005")
+                    DirectoryPath = Path.Combine(baseDir, "xbth20-0005"),
+                    Visualize = false
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "ETH",
                     QuoteSymbol = "USD",
                     Amount = 10,
-                    DirectoryPath = Path.Combine(baseDir, "ethusd-002")
+                    DirectoryPath = Path.Combine(baseDir, "ethusd-002"),
+                    Visualize = true
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "ETH",
                     QuoteSymbol = "USD",
                     Amount = 10,
-                    DirectoryPath = Path.Combine(baseDir, "ethusd-001")
+                    DirectoryPath = Path.Combine(baseDir, "ethusd-001"),
+                    Visualize = true
                 },
                 new BacktestConfig
                 {
                     BaseSymbol = "ETH",
                     QuoteSymbol = "USD",
                     Amount = 10,
-                    DirectoryPath = Path.Combine(baseDir, "ethusd-0005")
+                    DirectoryPath = Path.Combine(baseDir, "ethusd-0005"),
+                    Visualize = false
                 },
             };
 
@@ -88,14 +97,21 @@ namespace RangeBarProfit
                 //var strategy = new NaiveStrategy();
                 var strategy = new TrendStrategy(false);
 
-                RunBacktest(backtest, strategy);
+                var computer = RunBacktest(backtest, strategy);
+                Visualize(backtest, computer, strategy);
             }
         }
 
-        private static void RunBacktest(BacktestConfig backtest, TrendStrategy strategy)
+        private static ProfitComputer RunBacktest(BacktestConfig backtest, IStrategy strategy)
         {
-            var files = LoadAllFiles(backtest.DirectoryPath);
-            var computer = new ProfitComputer(backtest.BaseSymbol, backtest.QuoteSymbol, backtest.Amount, strategy);
+            var files = LoadAllFiles(backtest.DirectoryPath);//.Skip(1).Take(1).ToArray();
+            var computer = new ProfitComputer(
+                backtest.BaseSymbol, 
+                backtest.QuoteSymbol, 
+                backtest.Amount, 
+                strategy,
+                backtest.FeePercentage);
+
             Console.WriteLine();
             Console.WriteLine("=====================================================================");
             Console.WriteLine($"    Running for {files.Length} files from dir '{backtest.DirectoryPath}'");
@@ -114,6 +130,7 @@ namespace RangeBarProfit
             Console.WriteLine($"    {computer.GetReport()}");
             //Console.WriteLine("=====================================================================");
             Console.WriteLine();
+            return computer;
         }
 
         private static RangeBarModel[] LoadBars(string file)
@@ -128,6 +145,23 @@ namespace RangeBarProfit
         {
             var files = Directory.EnumerateFiles(dirPath, "*.csv");
             return files.OrderBy(x => x).ToArray();
+        }
+
+        private static void Visualize(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy)
+        {
+            if (!backtest.Visualize)
+                return;
+
+            var chart = new ChartVisualizer();
+            var filename = Path.GetFileName(backtest.DirectoryPath);
+            var strategyName = strategy.GetType().Name;
+            var pnl = computer.GetPnl();
+            var name = $"{filename} {strategyName} pnl: {pnl:#.00} {backtest.QuoteSymbol}";
+            var targetFile = Path.Combine(Path.GetDirectoryName(backtest.DirectoryPath), "reports", $"{filename}__{strategyName}");
+            //if (!Directory.Exists(targetFile))
+            //    Directory.CreateDirectory(targetFile);
+
+            chart.PlotTrades(name, targetFile, computer.Bars, computer.Trades, backtest.VisualizeByTime);
         }
     }
 }
