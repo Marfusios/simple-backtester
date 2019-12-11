@@ -7,13 +7,28 @@ namespace RangeBarProfit.Strategies
         private readonly bool _aggressive;
         private int _trendCounter;
 
+        //private int _lastMonth = -1;
+
         public TrendStrategy(bool aggressive)
         {
             _aggressive = aggressive;
         }
 
-        public Action Decide(RangeBarModel bar)
+        public Action Decide(RangeBarModel bar, double inventory)
         {
+            //var currentMonth = bar.TimestampDate.Month;
+            //if (_lastMonth < 0)
+            //    _lastMonth = currentMonth;
+
+            //if (_lastMonth != currentMonth)
+            //{
+            //    // month changed, reduce inventory
+            //    _lastMonth = currentMonth;
+                
+            //    if(Math.Abs(inventory) > 0)
+            //        return inventory >= 0 ? Action.Sell : Action.Buy;
+            //}
+
             if(_aggressive)
                 return DecideAggressive(bar);
             return DecideConservative(bar);

@@ -10,6 +10,7 @@ namespace RangeBarProfit
     {
         private readonly IStrategy _strategy;
 
+        private readonly BacktestConfig _config;
         private readonly string _quoteSymbol;
         private readonly string _baseSymbol;
         private readonly double _orderSize;
@@ -22,15 +23,15 @@ namespace RangeBarProfit
         private int _currentInventory;
         private int _maxInventory;
 
-        public ProfitComputer(string baseSymbol, string quoteSymbol, double orderSize, 
-            IStrategy strategy, double feePercentage, int? maxLimitInventory)
+        public ProfitComputer(IStrategy strategy, BacktestConfig config, int? maxLimitInventory)
         {
-            _orderSize = orderSize;
+            _orderSize = config.Amount;
             _strategy = strategy;
-            _feePercentage = feePercentage;
+            _feePercentage = config.FeePercentage;
+            _quoteSymbol = config.QuoteSymbol;
+            _baseSymbol = config.BaseSymbol;
+            _config = config;
             _maxLimitInventory = maxLimitInventory;
-            _quoteSymbol = quoteSymbol;
-            _baseSymbol = baseSymbol;
         }
 
         public TradeModel[] Trades => _trades.ToArray();
@@ -40,9 +41,11 @@ namespace RangeBarProfit
         {
             foreach (var bar in bars)
             {
+                bar.Index = _bars.Count;
                 _bars.Add(bar);
 
-                var decision = _strategy.Decide(bar);
+                var invAbs = _currentInventory * _orderSize;
+                var decision = _strategy.Decide(bar, invAbs);
                 if(decision == Action.Nothing)
                     continue;
 
@@ -69,7 +72,8 @@ namespace RangeBarProfit
                     {
                         Timestamp = bar.Timestamp,
                         Price = bar.Ask,
-                        Amount = orderSize
+                        Amount = orderSize,
+                        BarIndex = _bars.Count
                     };
                     _trades.Add(trade);
                     LogTrade(trade);
@@ -97,7 +101,8 @@ namespace RangeBarProfit
                     {
                         Timestamp = bar.Timestamp,
                         Price = bar.Bid,
-                        Amount = orderSize * (-1)
+                        Amount = orderSize * (-1),
+                        BarIndex = _bars.Count
                     };
                     _trades.Add(trade);
                     LogTrade(trade);
@@ -110,7 +115,6 @@ namespace RangeBarProfit
         public void ProcessLastBar(RangeBarModel bar)
         {
             // reduce inventory
-
             if (_currentInventory > 0)
             {
                 // sell trade
@@ -118,7 +122,8 @@ namespace RangeBarProfit
                 {
                     Timestamp = bar.Timestamp,
                     Price = bar.Bid,
-                    Amount = Math.Abs(_currentInventory * _orderSize) * (-1)
+                    Amount = Math.Abs(_currentInventory * _orderSize) * (-1),
+                    BarIndex = _bars.Count
                 };
                 _trades.Add(trade);
             }
@@ -129,7 +134,8 @@ namespace RangeBarProfit
                 {
                     Timestamp = bar.Timestamp,
                     Price = bar.Bid,
-                    Amount = Math.Abs(_currentInventory * _orderSize)
+                    Amount = Math.Abs(_currentInventory * _orderSize),
+                    BarIndex = _bars.Count
                 };
                 _trades.Add(trade);
             }
@@ -137,27 +143,56 @@ namespace RangeBarProfit
 
         public string GetReport()
         {
-            var buys = _trades.Where(x => x.Amount > 0).ToArray();
-            var sells = _trades.Where(x => x.Amount < 0).ToArray();
+            var rep = GetReport(_trades.ToArray(), _bars.ToArray());
+            return rep.ToString();
+        }
 
-            var bought = buys.Sum(x => x.Price * Math.Abs(x.Amount));
-            var sold = sells.Sum(x => x.Price * Math.Abs(x.Amount));
+        public string[] GetReportByMonth()
+        {
+            var grouped = _trades.GroupBy(x => x.TimestampDate.Month);
+            var reports = new List<string>();
 
-            var boughtAmount = buys.Sum(x => Math.Abs(x.Amount));
-            var soldAmount = sells.Sum(x => Math.Abs(x.Amount));
+            ProfitInfo total = null;
 
-            var avgBuy = bought / Math.Max(boughtAmount, 1);
-            var avgSell = sold / Math.Max(soldAmount, 1);
+            foreach (var group in grouped)
+            {
+                var bars = _bars
+                    .Where(x => x.TimestampDate.Month == group.Key+1)
+                    .OrderBy(x => x.Timestamp)
+                    .Take(1)
+                    .ToArray();
 
-            var pnl = sold - bought;
+                if(!bars.Any())
+                    bars = _bars
+                        .Where(x => x.TimestampDate.Month == group.Key)
+                        .OrderBy(x => x.Timestamp)
+                        .ToArray();
 
-            var fee = bought * _feePercentage + sold * _feePercentage;
-            var pnlWithFee = pnl - fee;
+                var trades = group.ToArray();
+                var monthReport = GetReport(trades.ToArray(), bars);
+                var formatted = $"month: {group.Key:00}, {monthReport}";
+                reports.Add(formatted);
 
-            return $"Trades {_trades.Count} " +
-                   $"(b: {buys.Length}/{avgBuy:#.00} {_quoteSymbol}, s: {sells.Length}/{avgSell:#.00} {_quoteSymbol}), " +
-                   $"Inv: {_currentInventory*_orderSize} {_baseSymbol} (max: {_maxInventory*_orderSize} {_baseSymbol}), " +
-                   $"Pnl: {pnl:#.00} {_quoteSymbol} (with fee: {pnlWithFee:#.00} {_quoteSymbol})";
+                if (total == null)
+                {
+                    total = monthReport;
+                    total.AverageBuy = 0;
+                    total.AverageSell = 0;
+                }
+                else
+                {
+                    total.TradesCount += monthReport.TradesCount;
+                    total.BuysCount += monthReport.BuysCount;
+                    total.SellsCount += monthReport.SellsCount;
+                    total.Pnl += monthReport.Pnl;
+                    total.PnlWithFee += monthReport.PnlWithFee;
+                }
+            }
+
+            var formattedTotal = $"total: __, {total}";
+            reports.Add(formattedTotal);
+
+            return reports.ToArray();
         }
 
         public double GetPnl()
@@ -170,6 +205,82 @@ namespace RangeBarProfit
 
             var pnl = sold - bought;
             return pnl;
+        }
+
+        private ProfitInfo GetReport(TradeModel[] trades, RangeBarModel[] bars)
+        {
+            var buys = trades.Where(x => x.Amount > 0).ToList();
+            var sells = trades.Where(x => x.Amount < 0).ToList();
+
+            var boughtAmount = buys.Sum(x => Math.Abs(x.Amount));
+            var soldAmount = sells.Sum(x => Math.Abs(x.Amount));
+            var diff = soldAmount - boughtAmount;
+            var diffAbs = Math.Abs(diff);
+
+            if (boughtAmount > soldAmount && diffAbs > 0.001)
+            {
+                // more bought, need to sell at last day price
+                var lastBar = bars.Last();
+                var trade = new TradeModel()
+                {
+                    Timestamp = lastBar.Timestamp,
+                    Price = lastBar.Bid,
+                    Amount = diff,
+                    BarIndex = lastBar.Index
+                };
+                sells.Add(trade);
+            }
+            if (boughtAmount < soldAmount && diffAbs > 0.001)
+            {
+                // more sold, need to buy at last day price
+                var lastBar = bars.Last();
+                var trade = new TradeModel()
+                {
+                    Timestamp = lastBar.Timestamp,
+                    Price = lastBar.Ask,
+                    Amount = diff,
+                    BarIndex = lastBar.Index
+                };
+                buys.Add(trade);
+            }
+
+            boughtAmount = buys.Sum(x => Math.Abs(x.Amount));
+            soldAmount = sells.Sum(x => Math.Abs(x.Amount));
+
+            var bought = buys.Sum(x => x.Price * Math.Abs(x.Amount));
+            var sold = sells.Sum(x => x.Price * Math.Abs(x.Amount));
+
+            var avgBuy = bought / Math.Max(boughtAmount, 1);
+            var avgSell = sold / Math.Max(soldAmount, 1);
+
+            var pnl = sold - bought;
+
+            var fee = bought * _feePercentage + sold * _feePercentage;
+            var pnlWithFee = pnl - fee;
+
+            var info = new ProfitInfo()
+            {
+                TradesCount = trades.Length,
+                BuysCount =  buys.Count,
+                SellsCount = sells.Count,
+
+                AverageBuy = avgBuy,
+                AverageSell = avgSell,
+
+                BaseSymbol = _baseSymbol,
+                QuoteSymbol = _quoteSymbol,
+
+                Pnl = pnl,
+                PnlWithFee = pnlWithFee,
+
+                DisplayWithFee = _config.DisplayFee,
+
+                OrderSize = _orderSize,
+                CurrentInventory = _currentInventory,
+                MaxInventory = _maxInventory,
+                MaxInventoryLimit = _maxLimitInventory,
+            };
+            return info;
         }
 
         private void LogTrade(TradeModel trade)

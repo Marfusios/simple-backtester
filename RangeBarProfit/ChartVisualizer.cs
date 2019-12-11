@@ -9,6 +9,9 @@ namespace RangeBarProfit
     {
         public void PlotTrades(string name, string filename, RangeBarModel[] prices, TradeModel[] orders, bool byTime)
         {
+            if (!prices.Any())
+                return;
+
             var filenameSafe = CheckFilename(filename);
 
             var priceCount = prices.Length;

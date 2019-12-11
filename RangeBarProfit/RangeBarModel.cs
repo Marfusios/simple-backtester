@@ -1,14 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using CsvHelper.Configuration.Attributes;
 
 namespace RangeBarProfit
 {
     public class RangeBarModel
     {
-
+        [Ignore]
+        public int Index { get; set; }
         public double Timestamp { get; set; }
+
+        [Ignore]
+        public DateTime TimestampDate => DateUtils.ConvertToTime(Timestamp);
 
         [Name("timestamp_diff_ms")]
         public double TimeDiffMs { get; set; }

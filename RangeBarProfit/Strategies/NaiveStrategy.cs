@@ -4,7 +4,7 @@
     {
         private bool _lastSell = true;
 
-        public Action Decide(RangeBarModel bar)
+        public Action Decide(RangeBarModel bar, double inventory)
         {
             if (_lastSell)
             {
