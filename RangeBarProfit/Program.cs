@@ -150,7 +150,8 @@ namespace RangeBarProfit
             {
                 //var strategy = new NaiveStrategy();
                 //var strategy = new TrendStrategy(false);
-                var strategy = new NaiveFollowerStrategy(false);
+                //var strategy = new NaiveFollowerStrategy(false);
+                var strategy = new KaufmanStrategy(false);
 
                 RunBacktest(backtest, strategy);
             }
