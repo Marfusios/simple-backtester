@@ -16,7 +16,7 @@
         public bool Visualize { get; set; } = true;
         public bool VisualizeByTime { get; set; } = false;
 
-        public int? VisualizeLimitBars { get; set; } = 100;
+        public int? VisualizeLimitBars { get; set; } = 200;
         public int? VisualizeSkipBars { get; set; } = null;
 
         public int? LimitFiles { get; set; } = null;

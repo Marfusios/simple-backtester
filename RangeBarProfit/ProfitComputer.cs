@@ -141,16 +141,16 @@ namespace RangeBarProfit
             }
         }
 
-        public string GetReport()
+        public ProfitInfo GetReport()
         {
             var rep = GetReport(_trades.ToArray(), _bars.ToArray());
-            return rep.ToString();
+            return rep;
         }
 
-        public string[] GetReportByMonth()
+        public ProfitInfo[] GetReportByMonth()
         {
             var grouped = _trades.GroupBy(x => x.TimestampDate.Month);
-            var reports = new List<string>();
+            var reports = new List<ProfitInfo>();
 
             ProfitInfo total = null;
 
@@ -171,11 +171,13 @@ namespace RangeBarProfit
                 var trades = group.ToArray();
                 var monthReport = GetReport(trades.ToArray(), bars);
                 var formatted = $"month: {group.Key:00}, {monthReport}";
-                reports.Add(formatted);
+                monthReport.Report = formatted;
+                monthReport.Month = group.Key;
+                reports.Add(monthReport);
 
                 if (total == null)
                 {
-                    total = monthReport;
+                    total = monthReport.Clone();
                     total.AverageBuy = 0;
                     total.AverageSell = 0;
                 }
@@ -189,22 +191,72 @@ namespace RangeBarProfit
                 }
             }
 
-            var formattedTotal = $"total: __, {total}";
-            reports.Add(formattedTotal);
+            if (total != null)
+            {
+                var formattedTotal = $"total: __, {total}";
+                total.Report = formattedTotal;
+                total.Month = null;
+                reports.Add(total);
+            }
 
             return reports.ToArray();
         }
 
-        public double GetPnl()
+        public ProfitInfo[] GetReportPerDays(int month)
         {
-            var buys = _trades.Where(x => x.Amount > 0).ToArray();
-            var sells = _trades.Where(x => x.Amount < 0).ToArray();
+            var grouped = _trades
+                .Where(x => x.TimestampDate.Month == month)
+                .GroupBy(x => x.TimestampDate.Day);
+            var reports = new List<ProfitInfo>();
 
-            var bought = buys.Sum(x => x.Price * Math.Abs(x.Amount));
-            var sold = sells.Sum(x => x.Price * Math.Abs(x.Amount));
+            ProfitInfo total = null;
 
-            var pnl = sold - bought;
-            return pnl;
+            foreach (var group in grouped)
+            {
+                var bars = _bars
+                    .Where(x => x.TimestampDate.Day == group.Key + 1)
+                    .OrderBy(x => x.Timestamp)
+                    .Take(1)
+                    .ToArray();
+
+                if (!bars.Any())
+                    bars = _bars
+                        .Where(x => x.TimestampDate.Day == group.Key)
+                        .OrderBy(x => x.Timestamp)
+                        .ToArray();
+
+                var trades = group.ToArray();
+                var dayReport = GetReport(trades.ToArray(), bars);
+                var formatted = $"day:   {group.Key:00}, {dayReport}";
+                dayReport.Report = formatted;
+                dayReport.Day = group.Key;
+                reports.Add(dayReport);
+
+                if (total == null)
+                {
+                    total = dayReport.Clone();
+                    total.AverageBuy = 0;
+                    total.AverageSell = 0;
+                }
+                else
+                {
+                    total.TradesCount += dayReport.TradesCount;
+                    total.BuysCount += dayReport.BuysCount;
+                    total.SellsCount += dayReport.SellsCount;
+                    total.Pnl += dayReport.Pnl;
+                    total.PnlWithFee += dayReport.PnlWithFee;
+                }
+            }
+
+            if (total != null)
+            {
+                var formattedTotal = $"total: __, {total}";
+                total.Report = formattedTotal;
+                total.Day = null;
+                reports.Add(total);
+            }
+
+            return reports.ToArray();
         }
 
         private ProfitInfo GetReport(TradeModel[] trades, RangeBarModel[] bars)
