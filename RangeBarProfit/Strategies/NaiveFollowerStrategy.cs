@@ -4,6 +4,7 @@
     {
         private readonly bool _againstTrend;
         private RangeBarModel _lastBar;
+        private double _lastMidChange;
 
         public NaiveFollowerStrategy(bool againstTrend)
         {
@@ -18,7 +19,10 @@
                 return Action.Nothing;
             }
 
-            var lastUp = _lastBar.MidChange >= 0;
+            var previousMidChange = _lastMidChange;
+            _lastMidChange = bar.Mid - _lastBar.Mid;
+
+            var lastUp = previousMidChange >= 0;
             _lastBar = bar;
 
             if(_againstTrend)

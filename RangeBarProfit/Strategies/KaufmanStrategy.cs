@@ -61,6 +61,7 @@
 
             if (_downScore >= 4 && (_largerPosition || !hasLong))
             {
+                // open position
                 _upScore = 0;
                 _downScore = 0;
                 return Action.Buy;
@@ -68,6 +69,7 @@
 
             if (hasLong && _upScore >= 5)
             {
+                // close position
                 _upScore = 0;
                 _downScore = 0;
                 return Action.Sell;

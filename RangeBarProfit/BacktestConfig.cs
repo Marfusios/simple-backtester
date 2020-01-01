@@ -10,7 +10,7 @@
         public string Range { get; set; }
 
         public double FeePercentage { get; set; } = 0.00075;
-        public bool DisplayFee { get; set; } = true;
+        public bool DisplayFee { get; set; } = false;
         public int[] MaxInventory { get; set; } = { 1, 2, 4, 20 };
 
         public bool Visualize { get; set; } = true;

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace RangeBarProfit
 {
+    [DebuggerDisplay("Trade {BarIndex} {TimestampDate} {Amount} @ {Price} inv: {CurrentInventory} {PositionState}")]
     public class TradeModel
     {
         public double Timestamp { get; set; }
@@ -12,5 +14,9 @@ namespace RangeBarProfit
         public double Amount { get; set; }
 
         public int BarIndex { get; set; }
+
+        public double CurrentInventory { get; set; }
+
+        public PositionState PositionState { get; set; }
     }
 }

@@ -15,7 +15,7 @@ namespace RangeBarProfit
 
             var baseDirBitfinex = "C:\\dev\\work\\manana\\data-processed\\bitfinex";
             var baseDirBitmex = "C:\\dev\\work\\manana\\data-processed\\bitmex";
-            var datePattern = /*string.Empty; //*/"2019-11"; 
+            var datePattern = string.Empty; //"2019-11"; 
 
             var backtests = new[]
             {
@@ -149,13 +149,16 @@ namespace RangeBarProfit
             foreach (var backtest in backtests)
             {
                 //var strategy = new NaiveStrategy();
-                //var strategy = new TrendStrategy(false);
+                var strategy = new TrendStrategy(false);
                 //var strategy = new NaiveFollowerStrategy(false);
-                var strategy = new KaufmanStrategy(false);
+                //var strategy = new KaufmanStrategy(false);
 
                 RunBacktest(backtest, strategy);
             }
         }
+
+
+
 
         private static void RunBacktest(BacktestConfig backtest, IStrategy strategy)
         {

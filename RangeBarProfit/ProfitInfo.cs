@@ -1,11 +1,17 @@
-﻿namespace RangeBarProfit
+﻿using System.Diagnostics;
+
+namespace RangeBarProfit
 {
+    [DebuggerDisplay("Report t: {TradesCount} pnl: {Pnl.ToString(\"0.00\")} ({PnlNoExcess.ToString(\"0.00\")}) avg: {AverageBuy.ToString(\"0.00\")}/{AverageSell.ToString(\"0.00\")}")]
     public class ProfitInfo
     {
 
         public int TradesCount { get; set; }
         public int BuysCount { get; set; }
         public int SellsCount { get; set; }
+
+        public double TotalBought { get; set; }
+        public double TotalSold { get; set; }
 
         public double AverageBuy { get; set; }
         public double AverageSell { get; set; }
@@ -14,6 +20,7 @@
         public string BaseSymbol { get; set; }
 
         public int CurrentInventory { get; set; }
+        public double ExcessAmount { get; set; }
 
         public double OrderSize { get; set; }
 
@@ -22,6 +29,7 @@
 
 
         public double Pnl { get; set; }
+        public double PnlNoExcess { get; set; }
         public double PnlWithFee { get; set; }
 
         public bool DisplayWithFee { get; set; }
@@ -59,9 +67,13 @@
                 MaxInventoryLimit = MaxInventoryLimit,
                 OrderSize = OrderSize,
                 Pnl = Pnl,
+                PnlNoExcess = PnlNoExcess,
                 PnlWithFee = PnlWithFee,
                 QuoteSymbol = QuoteSymbol,
-                SellsCount = SellsCount
+                SellsCount = SellsCount,
+                ExcessAmount = ExcessAmount,
+                TotalBought = TotalBought,
+                TotalSold = TotalSold
             };
         }
     }
