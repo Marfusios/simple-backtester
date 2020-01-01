@@ -14,7 +14,6 @@
         public int[] MaxInventory { get; set; } = { 1, 2, 4, 20 };
 
         public bool Visualize { get; set; } = true;
-        public bool VisualizeByTime { get; set; } = false;
 
         public int? VisualizeLimitBars { get; set; } = 200;
         public int? VisualizeSkipBars { get; set; } = null;

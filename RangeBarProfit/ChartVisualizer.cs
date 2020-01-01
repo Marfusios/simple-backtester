@@ -7,13 +7,32 @@ namespace RangeBarProfit
 {
     public class ChartVisualizer
     {
-        public void PlotTrades(string name, string filename, RangeBarModel[] prices, TradeModel[] orders, bool byTime)
+        public void Plot(string name, string filename, RangeBarModel[] prices, TradeModel[] orders, ProfitInfo[] days)
         {
             if (!prices.Any())
                 return;
 
             var filenameSafe = CheckFilename(filename);
+            var pl = InitPlot(filenameSafe);
 
+            
+            pl.star(2, 2);
+
+            PlotTrades($"{name} trades (by bar)", prices, orders, false, pl);
+            PlotTrades("trades (by time)", prices, orders, true, pl);
+            PlotPnl("Pnl (total)", days, true, pl);
+            PlotPnl("Pnl (per day)", days, false, pl);
+
+            // end page (writes output to disk)
+            pl.eop();
+
+            Thread.Sleep(500);
+            ((IDisposable)pl).Dispose();
+        }
+
+        private static void PlotTrades(string name, RangeBarModel[] prices, TradeModel[] orders, bool byTime,
+            PLStream pl)
+        {
             var priceCount = prices.Length;
             var priceX = new double[priceCount];
             var priceY = new double[priceCount];
@@ -63,29 +82,28 @@ namespace RangeBarProfit
                 sellY[j] = Math.Abs(order.Price);
             }
 
-            var pl = InitPlot(filenameSafe);
 
             // set axis limits
             var xMin = byTime ? prices.First().Timestamp - 10000 : 0;
-            var xMax = byTime ? prices.Last().Timestamp + 10000 : prices.Length+1;
+            var xMax = byTime ? prices.Last().Timestamp + 10000 : prices.Length + 1;
             var yMin = prices.Min(x => x.Mid);
             var yMax = prices.Max(x => x.Mid);
 
             yMin = yMin - (yMin * 0.001);
             yMax = yMax + (yMax * 0.001);
 
-            pl.env(xMin, xMax, yMin, yMax, AxesScale.Independent, AxisBox.BoxTicksLabelsAxes);
-            // pl.vpor(0, 960, 0, 720);
-            // pl.wind(0, 960, 0, 720);
+            pl.col0(8);
 
             // Set scaling for mail title text 125% size of default
-            // pl.schr(0, 1.25);
+            //pl.schr(0, 1.25);
+
+            pl.env(xMin, xMax, yMin, yMax, AxesScale.Independent, AxisBox.BoxTicksLabelsAxes);
 
             // The main title
-            if(byTime)
-                pl.lab("Timestamp", "Price", name);
+            if (byTime)
+                pl.lab($"Timestamp (to {prices.LastOrDefault()?.TimestampDate:d})", "Price", name);
             else
-                pl.lab("Step", "Price", name);
+                pl.lab($"Bars (first {prices.Length})", "Price", name);
             //pl.timefmt("%s");
 
             // plot using different colors
@@ -97,7 +115,7 @@ namespace RangeBarProfit
             {
                 pl.line(new[]
                 {
-                    buyX[i],  buyX[i],
+                    buyX[i], buyX[i],
                 }, new[]
                 {
                     yMin, buyY[i]
@@ -110,7 +128,7 @@ namespace RangeBarProfit
             {
                 pl.line(new[]
                 {
-                    sellX[j],  sellX[j],
+                    sellX[j], sellX[j],
                 }, new[]
                 {
                     sellY[j], yMax,
@@ -120,13 +138,46 @@ namespace RangeBarProfit
 
             pl.col0(7);
             pl.line(priceX, priceY);
-
-            // end page (writes output to disk)
-            pl.eop();
-
-            Thread.Sleep(500);
-            ((IDisposable)pl).Dispose();
         }
+
+        private void PlotPnl(string name, ProfitInfo[] days, bool total, PLStream pl)
+        {
+
+            var daysCount = days.Length;
+            var dayX = new double[daysCount];
+            var dayY = new double[daysCount];
+            var totalPnl = 0.0;
+
+            for (var j = 0; j < daysCount; j++)
+            {
+                var day = days[j];
+                totalPnl += day.Pnl;
+
+                dayX[j] = j;
+                dayY[j] = total ? totalPnl : day.Pnl;
+            }
+
+            // set axis limits
+            var xMin = 0;
+            var xMax = dayX.Length + 1;
+            var yMin = dayY.Min();
+            var yMax = dayY.Max();
+
+            yMin = yMin - (Math.Abs(yMin * 0.1));
+            yMax = yMax + (Math.Abs(yMax * 0.1));
+
+            pl.col0(8);
+
+            // Set scaling for mail title text 125% size of default
+            //pl.schr(0, 1.25);
+
+            pl.env(xMin, xMax, yMin, yMax, AxesScale.Independent, AxisBox.BoxTicksLabelsAxes);
+            pl.lab("Days", "Balance", name);
+
+            pl.col0(12);
+            pl.line(dayX, dayY);
+        }
+
 
         private static string CheckFilename(string filename)
         {
@@ -161,7 +212,7 @@ namespace RangeBarProfit
             //pl.spal0("cmap0_alternate.pal");
 
             // Initialize plplot
-            pl.init();
+            //pl.init();
             return pl;
         }
 
