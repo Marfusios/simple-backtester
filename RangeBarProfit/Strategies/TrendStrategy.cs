@@ -16,6 +16,10 @@ namespace RangeBarProfit.Strategies
 
         private RangeBarModel _lastBar;
         private double _lastMidChange;
+        private double _lastInventory;
+
+        private bool _entryBuyPaused;
+        private bool _entrySellPaused;
 
         public TrendStrategy(bool aggressive)
         {
@@ -38,7 +42,7 @@ namespace RangeBarProfit.Strategies
 
             if (_aggressive)
                 return DecideAggressive(bar, _lastMidChange, inventory);
-            return DecideConservative(bar, _lastMidChange);
+            return DecideConservative(bar, _lastMidChange, inventory);
         }
 
         //private Action DecideAggressive(RangeBarModel bar, double midChange)
@@ -137,7 +141,49 @@ namespace RangeBarProfit.Strategies
         //    return Action.Nothing;
         //}
 
-        private Action DecideConservative(RangeBarModel bar, double midChange)
+        //private Action DecideConservative(RangeBarModel bar, double midChange, double inventory)
+        //{
+        //    var lastInv = _lastInventory;
+        //    var currentInv = inventory;
+        //    _lastInventory = currentInv;
+
+        //    if (Math.Abs(currentInv) > 0)
+        //    {
+        //        _entryBuyPaused = false;
+        //        _entrySellPaused = false;
+        //    }
+        //    else
+        //    {
+        //        if (lastInv > 0)
+        //            _entrySellPaused = true;
+        //        else
+        //            _entryBuyPaused = true;
+        //    }
+
+        //    var currentTrend = Math.Sign(midChange);
+
+        //    if (Math.Abs(_trendCounter) >= _trendBreak)
+        //    {
+        //        // trend, check if current is opposite
+        //        var sameTrend = Math.Sign(_trendCounter) == currentTrend;
+        //        if (!sameTrend)
+        //        {
+        //            // opposite trend, close position
+        //            _trendCounter = 0;
+        //            var action = currentTrend < 0 ? Action.Sell : Action.Buy;
+        //            if (action == Action.Buy && _entryBuyPaused)
+        //                return Action.Nothing;
+        //            if (action == Action.Sell && _entrySellPaused)
+        //                return Action.Nothing;
+        //            return action;
+        //        }
+        //    }
+
+        //    _trendCounter += currentTrend;
+        //    return Action.Nothing;
+        //}
+
+        private Action DecideConservative(RangeBarModel bar, double midChange, double inventory)
         {
             var currentTrend = Math.Sign(midChange);
 

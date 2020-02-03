@@ -16,79 +16,17 @@ namespace RangeBarProfit
 
             var baseDirBitfinex = "C:\\dev\\work\\manana\\data-processed\\bitfinex";
             var baseDirBitmex = "C:\\dev\\work\\manana\\data-processed\\bitmex";
-            var datePattern = string.Empty; //"2019-11"; 
+            var datePattern =/* string.Empty; //*/"2020-01"; 
 
             var backtests = new[]
             {
-                new BacktestConfig
-                {
-                    BaseSymbol = "BTC",
-                    QuoteSymbol = "USD",
-                    Amount = 1,
-                    DirectoryPath = baseDirBitfinex,
-                    FilePattern = $"bitfinex_price-range-bars-004_btcusd_{datePattern}*.csv",
-                    Range = "004",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "BTC",
-                    QuoteSymbol = "USD",
-                    Amount = 1,
-                    DirectoryPath = baseDirBitfinex,
-                    FilePattern = $"bitfinex_price-range-bars-002_btcusd_{datePattern}*.csv",
-                    Range = "002",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "BTC",
-                    QuoteSymbol = "USD",
-                    Amount = 1,
-                    DirectoryPath = baseDirBitfinex,
-                    FilePattern = $"bitfinex_price-range-bars-001_btcusd_{datePattern}*.csv",
-                    Range = "001",
-                    Visualize = true
-                },
-
-                new BacktestConfig
-                {
-                    BaseSymbol = "ETH",
-                    QuoteSymbol = "USD",
-                    Amount = 10,
-                    DirectoryPath = baseDirBitfinex,
-                    FilePattern = $"bitfinex_price-range-bars-004_ethusd_{datePattern}*.csv",
-                    Range = "004",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "ETH",
-                    QuoteSymbol = "USD",
-                    Amount = 10,
-                    DirectoryPath = baseDirBitfinex,
-                    FilePattern = $"bitfinex_price-range-bars-002_ethusd_{datePattern}*.csv",
-                    Range = "002",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "ETH",
-                    QuoteSymbol = "USD",
-                    Amount = 10,
-                    DirectoryPath = baseDirBitfinex,
-                    FilePattern = $"bitfinex_price-range-bars-001_ethusd_{datePattern}*.csv",
-                    Range = "001",
-                    Visualize = true
-                },
-
                 //new BacktestConfig
                 //{
                 //    BaseSymbol = "BTC",
                 //    QuoteSymbol = "USD",
                 //    Amount = 1,
-                //    DirectoryPath = baseDirBitmex,
-                //    FilePattern = $"bitmex_price-range-bars-004_xbtusd_{datePattern}*.csv",
+                //    DirectoryPath = baseDirBitfinex,
+                //    FilePattern = $"bitfinex_price-range-bars-004_btcusd_{datePattern}*.csv",
                 //    Range = "004",
                 //    Visualize = true
                 //},
@@ -97,8 +35,8 @@ namespace RangeBarProfit
                 //    BaseSymbol = "BTC",
                 //    QuoteSymbol = "USD",
                 //    Amount = 1,
-                //    DirectoryPath = baseDirBitmex,
-                //    FilePattern = $"bitmex_price-range-bars-002_xbtusd_{datePattern}*.csv",
+                //    DirectoryPath = baseDirBitfinex,
+                //    FilePattern = $"bitfinex_price-range-bars-002_btcusd_{datePattern}*.csv",
                 //    Range = "002",
                 //    Visualize = true
                 //},
@@ -107,8 +45,8 @@ namespace RangeBarProfit
                 //    BaseSymbol = "BTC",
                 //    QuoteSymbol = "USD",
                 //    Amount = 1,
-                //    DirectoryPath = baseDirBitmex,
-                //    FilePattern = $"bitmex_price-range-bars-001_xbtusd_{datePattern}*.csv",
+                //    DirectoryPath = baseDirBitfinex,
+                //    FilePattern = $"bitfinex_price-range-bars-001_btcusd_{datePattern}*.csv",
                 //    Range = "001",
                 //    Visualize = true
                 //},
@@ -118,8 +56,8 @@ namespace RangeBarProfit
                 //    BaseSymbol = "ETH",
                 //    QuoteSymbol = "USD",
                 //    Amount = 10,
-                //    DirectoryPath = baseDirBitmex,
-                //    FilePattern = $"bitmex_price-range-bars-004_ethusd_{datePattern}*.csv",
+                //    DirectoryPath = baseDirBitfinex,
+                //    FilePattern = $"bitfinex_price-range-bars-004_ethusd_{datePattern}*.csv",
                 //    Range = "004",
                 //    Visualize = true
                 //},
@@ -128,8 +66,8 @@ namespace RangeBarProfit
                 //    BaseSymbol = "ETH",
                 //    QuoteSymbol = "USD",
                 //    Amount = 10,
-                //    DirectoryPath = baseDirBitmex,
-                //    FilePattern = $"bitmex_price-range-bars-002_ethusd_{datePattern}*.csv",
+                //    DirectoryPath = baseDirBitfinex,
+                //    FilePattern = $"bitfinex_price-range-bars-002_ethusd_{datePattern}*.csv",
                 //    Range = "002",
                 //    Visualize = true
                 //},
@@ -138,11 +76,73 @@ namespace RangeBarProfit
                 //    BaseSymbol = "ETH",
                 //    QuoteSymbol = "USD",
                 //    Amount = 10,
-                //    DirectoryPath = baseDirBitmex,
-                //    FilePattern = $"bitmex_price-range-bars-001_ethusd_{datePattern}*.csv",
+                //    DirectoryPath = baseDirBitfinex,
+                //    FilePattern = $"bitfinex_price-range-bars-001_ethusd_{datePattern}*.csv",
                 //    Range = "001",
                 //    Visualize = true
                 //},
+
+                new BacktestConfig
+                {
+                    BaseSymbol = "BTC",
+                    QuoteSymbol = "USD",
+                    Amount = 1,
+                    DirectoryPath = baseDirBitmex,
+                    FilePattern = $"bitmex_price-range-bars-004_xbtusd_{datePattern}*.csv",
+                    Range = "004",
+                    Visualize = true
+                },
+                new BacktestConfig
+                {
+                    BaseSymbol = "BTC",
+                    QuoteSymbol = "USD",
+                    Amount = 1,
+                    DirectoryPath = baseDirBitmex,
+                    FilePattern = $"bitmex_price-range-bars-002_xbtusd_{datePattern}*.csv",
+                    Range = "002",
+                    Visualize = true
+                },
+                new BacktestConfig
+                {
+                    BaseSymbol = "BTC",
+                    QuoteSymbol = "USD",
+                    Amount = 1,
+                    DirectoryPath = baseDirBitmex,
+                    FilePattern = $"bitmex_price-range-bars-001_xbtusd_{datePattern}*.csv",
+                    Range = "001",
+                    Visualize = true
+                },
+
+                new BacktestConfig
+                {
+                    BaseSymbol = "ETH",
+                    QuoteSymbol = "USD",
+                    Amount = 10,
+                    DirectoryPath = baseDirBitmex,
+                    FilePattern = $"bitmex_price-range-bars-004_ethusd_{datePattern}*.csv",
+                    Range = "004",
+                    Visualize = true
+                },
+                new BacktestConfig
+                {
+                    BaseSymbol = "ETH",
+                    QuoteSymbol = "USD",
+                    Amount = 10,
+                    DirectoryPath = baseDirBitmex,
+                    FilePattern = $"bitmex_price-range-bars-002_ethusd_{datePattern}*.csv",
+                    Range = "002",
+                    Visualize = true
+                },
+                new BacktestConfig
+                {
+                    BaseSymbol = "ETH",
+                    QuoteSymbol = "USD",
+                    Amount = 10,
+                    DirectoryPath = baseDirBitmex,
+                    FilePattern = $"bitmex_price-range-bars-001_ethusd_{datePattern}*.csv",
+                    Range = "001",
+                    Visualize = true
+                },
             };
 
 
@@ -150,9 +150,10 @@ namespace RangeBarProfit
             foreach (var backtest in backtests)
             {
                 //var strategy = new NaiveStrategy();
-                var strategy = new TrendStrategy(false);
+                //var strategy = new TrendStrategy(false);
                 //var strategy = new NaiveFollowerStrategy(false);
                 //var strategy = new KaufmanStrategy(false);
+                var strategy = new StairsStrategy(false);
 
                 RunBacktest(backtest, strategy);
             }
@@ -176,6 +177,7 @@ namespace RangeBarProfit
             Console.WriteLine("=====================================================================");
             Console.WriteLine($"    Running for {files.Length} files from dir '{backtest.DirectoryPath}' and pattern: '{backtest.FilePattern}'");
 
+            var builderTop = new StringBuilder();
             var builder = new StringBuilder();
 
             foreach (var maxInventory in backtest.MaxInventory)
@@ -193,6 +195,7 @@ namespace RangeBarProfit
                     computer.ProcessLastBar(lastBar);
 
                 var report = computer.GetReport();
+                builderTop.AppendLine(report.ToString());
                 builder.AppendLine(report.ToString());
                 Console.WriteLine($"    {report}");
 
@@ -201,8 +204,11 @@ namespace RangeBarProfit
                 foreach (var month in perMonth)
                 {
                     builder.AppendLine($"    {month.Report}");
-                    if(month.Month == null)
+                    if (month.Month == null)
+                    {
+                        builderTop.AppendLine($"{month.Report}");
                         continue;
+                    }
                     var perDay = computer.GetReportPerDays(month.Month.Value);
                     reportDays.AddRange(perDay.Where(x => x.Day != null));
                     foreach (var day in perDay)
@@ -215,7 +221,8 @@ namespace RangeBarProfit
                 Visualize(backtest, computer, strategy, maxInventory, report, reportDays.ToArray());
             }
 
-            SaveTextReport(builder.ToString(), backtest, strategy);
+            var mergedReport = $"{builderTop}{Environment.NewLine}{builder}";
+            SaveTextReport(mergedReport, backtest, strategy);
 
             Console.WriteLine();
         }
