@@ -16,7 +16,7 @@
             _largerPosition = largerPosition;
         }
 
-        public Action Decide(RangeBarModel bar, double inventory)
+        public Action Decide(RangeBarModel bar, double inventoryAbsolute)
         {
             var oldBar = _lastBar;
             _lastBar = bar;
@@ -45,7 +45,7 @@
                 _downScore = 0;
             }
 
-            var hasLong = inventory > 0;
+            var hasLong = inventoryAbsolute > 0;
 
             if (hasLong)
             {

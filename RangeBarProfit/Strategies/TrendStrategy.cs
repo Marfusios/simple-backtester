@@ -26,7 +26,7 @@ namespace RangeBarProfit.Strategies
             _aggressive = aggressive;
         }
 
-        public Action Decide(RangeBarModel bar, double inventory)
+        public Action Decide(RangeBarModel bar, double inventoryAbsolute)
         {
             if (_lastBar == null)
             {
@@ -41,8 +41,8 @@ namespace RangeBarProfit.Strategies
                 return Action.Nothing;
 
             if (_aggressive)
-                return DecideAggressive(bar, _lastMidChange, inventory);
-            return DecideConservative(bar, _lastMidChange, inventory);
+                return DecideAggressive(bar, _lastMidChange, inventoryAbsolute);
+            return DecideConservative(bar, _lastMidChange, inventoryAbsolute);
         }
 
         //private Action DecideAggressive(RangeBarModel bar, double midChange)

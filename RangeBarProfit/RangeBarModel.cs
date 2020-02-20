@@ -11,6 +11,9 @@ namespace RangeBarProfit
         public int Index { get; set; }
         public double Timestamp { get; set; }
 
+        [Name("timestamp_diff_ms")]
+        public double TimestampDiffMs { get; set; }
+
         [Ignore]
         public DateTime TimestampDate => DateUtils.ConvertToTime(Timestamp);
 

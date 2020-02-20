@@ -16,7 +16,7 @@ namespace RangeBarProfit
 
             var baseDirBitfinex = "C:\\dev\\work\\manana\\data-processed\\bitfinex";
             var baseDirBitmex = "C:\\dev\\work\\manana\\data-processed\\bitmex";
-            var datePattern =/* string.Empty; //*/"2020-01"; 
+            var datePattern = string.Empty; //"2020-01"; 
 
             var backtests = new[]
             {
@@ -153,7 +153,8 @@ namespace RangeBarProfit
                 //var strategy = new TrendStrategy(false);
                 //var strategy = new NaiveFollowerStrategy(false);
                 //var strategy = new KaufmanStrategy(false);
-                var strategy = new StairsStrategy(false);
+                //var strategy = new StairsStrategy(false);
+                var strategy = new Func<IStrategy>(() => new WindowStrategy(50, 4));
 
                 RunBacktest(backtest, strategy);
             }
@@ -162,7 +163,7 @@ namespace RangeBarProfit
 
 
 
-        private static void RunBacktest(BacktestConfig backtest, IStrategy strategy)
+        private static void RunBacktest(BacktestConfig backtest, Func<IStrategy> strategyFactory)
         {
             var files = LoadAllFiles(backtest.DirectoryPath, backtest.FilePattern);
             if (backtest.SkipFiles.HasValue)
@@ -183,6 +184,7 @@ namespace RangeBarProfit
             foreach (var maxInventory in backtest.MaxInventory)
             {
                 RangeBarModel lastBar = null;
+                var strategy = strategyFactory();
                 var computer = new ProfitComputer(strategy, backtest, maxInventory);
                 foreach (var file in files)
                 {
@@ -222,7 +224,7 @@ namespace RangeBarProfit
             }
 
             var mergedReport = $"{builderTop}{Environment.NewLine}{builder}";
-            SaveTextReport(mergedReport, backtest, strategy);
+            SaveTextReport(mergedReport, backtest, strategyFactory());
 
             Console.WriteLine();
         }

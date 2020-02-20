@@ -9,6 +9,6 @@
 
     public interface IStrategy
     {
-        Action Decide(RangeBarModel bar, double inventory);
+        Action Decide(RangeBarModel bar, double inventoryAbsolute);
     }
 }

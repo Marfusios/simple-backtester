@@ -11,7 +11,7 @@
             _againstTrend = againstTrend;
         }
 
-        public Action Decide(RangeBarModel bar, double inventory)
+        public Action Decide(RangeBarModel bar, double inventoryAbsolute)
         {
             if (_lastBar == null)
             {

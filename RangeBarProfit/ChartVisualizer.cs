@@ -110,6 +110,8 @@ namespace RangeBarProfit
             // see http://plplot.sourceforge.net/examples.php?demo=02 for palette indices
 
             pl.col0(3);
+            pl.width(0.4);
+
             //pl.poin(buyX, buyY, (char)8);
             for (int i = 0; i < buyX.Length; i++)
             {
@@ -137,6 +139,7 @@ namespace RangeBarProfit
 
 
             pl.col0(7);
+            pl.width(1);
             pl.line(priceX, priceY);
         }
 
@@ -144,6 +147,9 @@ namespace RangeBarProfit
         {
 
             var daysCount = days.Length;
+            if (daysCount <= 0)
+                return;
+
             var dayX = new double[daysCount];
             var dayY = new double[daysCount];
             var totalPnl = 0.0;
