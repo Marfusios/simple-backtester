@@ -1,12 +1,10 @@
 ```
-
-██████   █████   ██████ ██   ██ ████████ ███████ ███████ ████████ ███████ ██████  
-██   ██ ██   ██ ██      ██  ██     ██    ██      ██         ██    ██      ██   ██ 
-██████  ███████ ██      █████      ██    █████   ███████    ██    █████   ██████  
-██   ██ ██   ██ ██      ██  ██     ██    ██           ██    ██    ██      ██   ██ 
-██████  ██   ██  ██████ ██   ██    ██    ███████ ███████    ██    ███████ ██   ██ 
-                                                                                                                                                                  
-```                                                                      
+██████   █████   ██████ ██   ██ ████████ ███████ ███████ ████████ ███████ ██████ 
+██   ██ ██   ██ ██      ██  ██     ██    ██      ██         ██    ██      ██   ██
+██████  ███████ ██      █████      ██    █████   ███████    ██    █████   ██████ 
+██   ██ ██   ██ ██      ██  ██     ██    ██           ██    ██    ██      ██   ██
+██████  ██   ██  ██████ ██   ██    ██    ███████ ███████    ██    ███████ ██   ██
+```
 
 # Simple Backtester [![Build Status](https://travis-ci.com/Marfusios/simle-backtester.svg?branch=master)](https://travis-ci.com/Marfusios/simle-backtester) 
 
@@ -16,6 +14,9 @@ A very simple backtesting application for OHLC data (range bars)
     MIT
 
 ### Features
+
+* cross platform
+* chart and text report
 
 ![Chart report](docs/report_chart.png) 
 ![Text report](docs/report_text.png)
