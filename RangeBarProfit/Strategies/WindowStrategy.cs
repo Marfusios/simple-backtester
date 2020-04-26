@@ -51,6 +51,7 @@ namespace RangeBarProfit.Strategies
 
             if (hasPosition)
             {
+                // exit
                 _currentPositionExitTimeSpan += currentBar.TimestampDiffMs;
 
                 if (_currentPositionExitTimeSpan >= _currentPositionEntryTimeSpan)
@@ -60,10 +61,13 @@ namespace RangeBarProfit.Strategies
                     if (inventoryAbsolute < 0)
                         return Action.Buy;
                 }
+
+                //return Action.Nothing;
             }
 
             if (currentBar.Mid >= maxMid && fractal > fractalLimit)
             {
+                // entry
                 _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
                 _currentPositionExitTimeSpan = 0;
                 return Action.Buy;
@@ -71,6 +75,7 @@ namespace RangeBarProfit.Strategies
 
             if (currentBar.Mid <= minMid && fractal > fractalLimit)
             {
+                // entry
                 _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
                 _currentPositionExitTimeSpan = 0;
                 return Action.Sell;

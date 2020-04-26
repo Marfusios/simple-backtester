@@ -25,9 +25,9 @@ namespace RangeBarProfit
 
         public ProfitComputer(IStrategy strategy, BacktestConfig config, int? maxLimitInventory)
         {
-            _orderSize = config.Amount;
+            _orderSize = config.Amount ?? 1;
             _strategy = strategy;
-            _feePercentage = config.FeePercentage;
+            _feePercentage = config.FeePercentage ?? 0;
             _quoteSymbol = config.QuoteSymbol;
             _baseSymbol = config.BaseSymbol;
             _config = config;
@@ -164,7 +164,7 @@ namespace RangeBarProfit
 
         public ProfitInfo[] GetReportByMonth()
         {
-            var grouped = _trades.GroupBy(x => x.TimestampDate.Month);
+            var grouped = _trades.GroupBy(x => new { x.TimestampDate.Year, x.TimestampDate.Month });
             var reports = new List<ProfitInfo>();
 
             ProfitInfo total = null;
@@ -173,9 +173,10 @@ namespace RangeBarProfit
             {
                 var trades = group.ToArray();
                 var monthReport = GetReport(trades.ToArray());
-                var formatted = $"month: {group.Key:00}, {monthReport}";
+                var formatted = $"month: {group.Key.Month:00}/{group.Key.Year}, {monthReport}";
                 monthReport.Report = formatted;
-                monthReport.Month = group.Key;
+                monthReport.Year = group.Key.Year;
+                monthReport.Month = group.Key.Month;
                 reports.Add(monthReport);
 
                 if (total == null)
@@ -208,7 +209,7 @@ namespace RangeBarProfit
             return reports.ToArray();
         }
 
-        public ProfitInfo[] GetReportPerDays(int month)
+        public ProfitInfo[] GetReportPerDays(int year, int month)
         {
             var grouped = _trades
                 .Where(x => x.TimestampDate.Month == month)
@@ -224,6 +225,8 @@ namespace RangeBarProfit
                 var formatted = $"day:   {group.Key:00}, {dayReport}";
                 dayReport.Report = formatted;
                 dayReport.Day = group.Key;
+                dayReport.Year = year;
+                dayReport.Month = month;
                 reports.Add(dayReport);
 
                 if (total == null)
@@ -263,7 +266,7 @@ namespace RangeBarProfit
 
             info.BaseSymbol = _baseSymbol;
             info.QuoteSymbol = _quoteSymbol;
-            info.DisplayWithFee = _config.DisplayFee;
+            info.DisplayWithFee = _config.DisplayFee ?? false;
             info.OrderSize = _orderSize;
             info.CurrentInventory = _currentInventory;
             info.MaxInventory = _maxInventory;

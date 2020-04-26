@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using CsvHelper;
 using RangeBarProfit.Strategies;
@@ -12,155 +14,107 @@ namespace RangeBarProfit
     {
         static void Main(string[] args)
         {
-            Console.WriteLine($"Range bars profit computer");
+            var env = args?.FirstOrDefault();
+            var envText = string.IsNullOrWhiteSpace(env) ? string.Empty : $"env: {env}";
 
-            var baseDirBitfinex = "C:\\dev\\work\\manana\\data-processed\\bitfinex";
-            var baseDirBitmex = "C:\\dev\\work\\manana\\data-processed\\bitmex";
-            var datePattern = string.Empty; //"2020-01"; 
+            Console.WriteLine($@"
+    ██████   █████   ██████ ██   ██ ████████ ███████ ███████ ████████ ███████ ██████  
+    ██   ██ ██   ██ ██      ██  ██     ██    ██      ██         ██    ██      ██   ██ 
+    ██████  ███████ ██      █████      ██    █████   ███████    ██    █████   ██████  
+    ██   ██ ██   ██ ██      ██  ██     ██    ██           ██    ██    ██      ██   ██ 
+    ██████  ██   ██  ██████ ██   ██    ██    ███████ ███████    ██    ███████ ██   ██ 
+                                                                                  
+{envText}                                                                                  
+");
 
-            var backtests = new[]
+            var config = InitConfig(env);
+            MergeBacktestsWithBase(config);
+
+            var strategyFactory = new Func<IStrategy>(() => ResolveStrategy(config.Strategy, config.StrategyParams));
+            var strategy = strategyFactory();
+
+            var paramsText = config.StrategyParams != null
+                ? $"params: [{string.Join(", ", config.StrategyParams)}]"
+                : string.Empty;
+            Console.WriteLine($"[STRATEGY] '{strategy.GetType().Name}'  {paramsText}");
+
+            foreach (var backtest in config.Backtests)
             {
-                //new BacktestConfig
-                //{
-                //    BaseSymbol = "BTC",
-                //    QuoteSymbol = "USD",
-                //    Amount = 1,
-                //    DirectoryPath = baseDirBitfinex,
-                //    FilePattern = $"bitfinex_price-range-bars-004_btcusd_{datePattern}*.csv",
-                //    Range = "004",
-                //    Visualize = true
-                //},
-                //new BacktestConfig
-                //{
-                //    BaseSymbol = "BTC",
-                //    QuoteSymbol = "USD",
-                //    Amount = 1,
-                //    DirectoryPath = baseDirBitfinex,
-                //    FilePattern = $"bitfinex_price-range-bars-002_btcusd_{datePattern}*.csv",
-                //    Range = "002",
-                //    Visualize = true
-                //},
-                //new BacktestConfig
-                //{
-                //    BaseSymbol = "BTC",
-                //    QuoteSymbol = "USD",
-                //    Amount = 1,
-                //    DirectoryPath = baseDirBitfinex,
-                //    FilePattern = $"bitfinex_price-range-bars-001_btcusd_{datePattern}*.csv",
-                //    Range = "001",
-                //    Visualize = true
-                //},
-
-                //new BacktestConfig
-                //{
-                //    BaseSymbol = "ETH",
-                //    QuoteSymbol = "USD",
-                //    Amount = 10,
-                //    DirectoryPath = baseDirBitfinex,
-                //    FilePattern = $"bitfinex_price-range-bars-004_ethusd_{datePattern}*.csv",
-                //    Range = "004",
-                //    Visualize = true
-                //},
-                //new BacktestConfig
-                //{
-                //    BaseSymbol = "ETH",
-                //    QuoteSymbol = "USD",
-                //    Amount = 10,
-                //    DirectoryPath = baseDirBitfinex,
-                //    FilePattern = $"bitfinex_price-range-bars-002_ethusd_{datePattern}*.csv",
-                //    Range = "002",
-                //    Visualize = true
-                //},
-                //new BacktestConfig
-                //{
-                //    BaseSymbol = "ETH",
-                //    QuoteSymbol = "USD",
-                //    Amount = 10,
-                //    DirectoryPath = baseDirBitfinex,
-                //    FilePattern = $"bitfinex_price-range-bars-001_ethusd_{datePattern}*.csv",
-                //    Range = "001",
-                //    Visualize = true
-                //},
-
-                new BacktestConfig
-                {
-                    BaseSymbol = "BTC",
-                    QuoteSymbol = "USD",
-                    Amount = 1,
-                    DirectoryPath = baseDirBitmex,
-                    FilePattern = $"bitmex_price-range-bars-004_xbtusd_{datePattern}*.csv",
-                    Range = "004",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "BTC",
-                    QuoteSymbol = "USD",
-                    Amount = 1,
-                    DirectoryPath = baseDirBitmex,
-                    FilePattern = $"bitmex_price-range-bars-002_xbtusd_{datePattern}*.csv",
-                    Range = "002",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "BTC",
-                    QuoteSymbol = "USD",
-                    Amount = 1,
-                    DirectoryPath = baseDirBitmex,
-                    FilePattern = $"bitmex_price-range-bars-001_xbtusd_{datePattern}*.csv",
-                    Range = "001",
-                    Visualize = true
-                },
-
-                new BacktestConfig
-                {
-                    BaseSymbol = "ETH",
-                    QuoteSymbol = "USD",
-                    Amount = 10,
-                    DirectoryPath = baseDirBitmex,
-                    FilePattern = $"bitmex_price-range-bars-004_ethusd_{datePattern}*.csv",
-                    Range = "004",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "ETH",
-                    QuoteSymbol = "USD",
-                    Amount = 10,
-                    DirectoryPath = baseDirBitmex,
-                    FilePattern = $"bitmex_price-range-bars-002_ethusd_{datePattern}*.csv",
-                    Range = "002",
-                    Visualize = true
-                },
-                new BacktestConfig
-                {
-                    BaseSymbol = "ETH",
-                    QuoteSymbol = "USD",
-                    Amount = 10,
-                    DirectoryPath = baseDirBitmex,
-                    FilePattern = $"bitmex_price-range-bars-001_ethusd_{datePattern}*.csv",
-                    Range = "001",
-                    Visualize = true
-                },
-            };
-
-
-
-            foreach (var backtest in backtests)
-            {
-                //var strategy = new NaiveStrategy();
-                //var strategy = new TrendStrategy(false);
-                //var strategy = new NaiveFollowerStrategy(false);
-                //var strategy = new KaufmanStrategy(false);
-                //var strategy = new StairsStrategy(false);
-                var strategy = new Func<IStrategy>(() => new WindowStrategy(50, 4));
-
-                RunBacktest(backtest, strategy);
+                RunBacktest(backtest, strategyFactory);
             }
         }
 
+        private static SimpleBacktesterConfig InitConfig(string environment)
+        {
+            var configRoot = ConfigUtils.InitConfig(environment);
+            var config = new SimpleBacktesterConfig();
+            ConfigUtils.FillConfig(configRoot, "config", config);
+            return config;
+        }
 
+        private static void MergeBacktestsWithBase(SimpleBacktesterConfig config)
+        {
+            if(config.Backtests == null || !config.Backtests.Any())
+                throw new Exception("Please configure at least one backtest in appsettings.json");
+
+            if (config.Base == null)
+                return;
+
+            foreach (var backtest in config.Backtests)
+            {
+                backtest.BaseSymbol ??= config.Base.BaseSymbol;
+                backtest.QuoteSymbol ??= config.Base.QuoteSymbol;
+                backtest.Amount ??= config.Base.Amount;
+                backtest.DirectoryPath ??= config.Base.DirectoryPath;
+                backtest.FilePattern ??= config.Base.FilePattern;
+
+                backtest.FeePercentage ??= config.Base.FeePercentage;
+                backtest.DisplayFee ??= config.Base.DisplayFee;
+
+                backtest.MaxInventory ??= config.Base.MaxInventory;
+
+                backtest.Visualize ??= config.Base.Visualize;
+                backtest.VisualizeLimitBars ??= config.Base.VisualizeLimitBars;
+                backtest.VisualizeSkipBars ??= config.Base.VisualizeSkipBars;
+
+                backtest.SkipFiles ??= config.Base.SkipFiles;
+                backtest.LimitFiles ??= config.Base.LimitFiles;
+            }
+        }
+
+        private static IStrategy ResolveStrategy(string strategyName, object[] strategyParams)
+        {
+            if (string.IsNullOrWhiteSpace(strategyName))
+                throw new Exception("Please configure strategy name in appsettings.json");
+
+            var strategies = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(x => x.GetTypeInfo().ImplementedInterfaces.Contains(typeof(IStrategy)))
+                .ToArray();
+            var strategy =
+                strategies.FirstOrDefault(x => x.Name.Equals(strategyName, StringComparison.OrdinalIgnoreCase));
+            if(strategy == null)
+                throw new Exception($"There is no strategy with name '{strategyName}'");
+            var parameters = FixParams(strategyParams);
+            return (IStrategy)Activator.CreateInstance(strategy, parameters);
+        }
+
+        private static object[] FixParams(object[] strategyParams)
+        {
+            return strategyParams?.Select(x =>
+                {
+                    if (x is string xStr)
+                    {
+                        if (int.TryParse(xStr, out var xInt)) return xInt;
+                        if (long.TryParse(xStr, out var xLong)) return xLong;
+                        if (double.TryParse(xStr, out var xDouble)) return xDouble;
+                        if (DateTime.TryParse(xStr, out var xDateTime)) return xDateTime;
+                        if (bool.TryParse(xStr, out var xBool)) return xBool;
+                    }
+
+                    return x;
+                })
+                .ToArray();
+        }
 
 
         private static void RunBacktest(BacktestConfig backtest, Func<IStrategy> strategyFactory)
@@ -197,7 +151,12 @@ namespace RangeBarProfit
                     computer.ProcessLastBar(lastBar);
 
                 var report = computer.GetReport();
+
                 builderTop.AppendLine(report.ToString());
+
+                builder.AppendLine(
+                    $"==== MAX INV: {maxInventory} {new string('=', 133)}");
+                builder.AppendLine();
                 builder.AppendLine(report.ToString());
                 Console.WriteLine($"    {report}");
 
@@ -211,13 +170,16 @@ namespace RangeBarProfit
                         builderTop.AppendLine($"{month.Report}");
                         continue;
                     }
-                    var perDay = computer.GetReportPerDays(month.Month.Value);
+                    var perDay = computer.GetReportPerDays(month.Year.Value, month.Month.Value);
                     reportDays.AddRange(perDay.Where(x => x.Day != null));
                     foreach (var day in perDay)
                     {
                         builder.AppendLine($"        {day.Report}");
                     }
                 }
+
+                builderTop.AppendLine();
+                builder.AppendLine();
                 builder.AppendLine();
 
                 Visualize(backtest, computer, strategy, maxInventory, report, reportDays.ToArray());
@@ -232,7 +194,7 @@ namespace RangeBarProfit
         private static RangeBarModel[] LoadBars(string file)
         {
             using var reader = new StreamReader(file);
-            using var csv = new CsvReader(reader);
+            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
             csv.Configuration.PrepareHeaderForMatch = (header, index) => header.ToLower();
             return csv.GetRecords<RangeBarModel>().ToArray();
         }
@@ -259,7 +221,7 @@ namespace RangeBarProfit
         private static void Visualize(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy, 
             int maxInv, ProfitInfo report, ProfitInfo[] days)
         {
-            if (computer == null || !backtest.Visualize)
+            if (computer == null || backtest.Visualize == null || !backtest.Visualize.Value)
                 return;
 
             var chart = new ChartVisualizer();

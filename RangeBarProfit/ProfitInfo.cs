@@ -2,7 +2,7 @@
 
 namespace RangeBarProfit
 {
-    [DebuggerDisplay("Report t: {TradesCount} pnl: {Pnl.ToString(\"0.00\")} ({PnlNoExcess.ToString(\"0.00\")}) avg: {AverageBuy.ToString(\"0.00\")}/{AverageSell.ToString(\"0.00\")}")]
+    [DebuggerDisplay("Report [{Day}/{Month}/{Year}] t: {TradesCount} pnl: {Pnl.ToString(\"0.00\")} ({PnlNoExcess.ToString(\"0.00\")}) avg: {AverageBuy.ToString(\"0.00\")}/{AverageSell.ToString(\"0.00\")}")]
     public class ProfitInfo
     {
 
@@ -36,6 +36,8 @@ namespace RangeBarProfit
 
         public string Report { get; set; }
 
+        public int? Year { get; set; }
+
         public int? Month { get; set; }
 
         public int? Day { get; set; }
@@ -56,9 +58,10 @@ namespace RangeBarProfit
                 TradesCount = TradesCount,
                 AverageBuy = AverageBuy,
                 AverageSell = AverageSell,
+                Year = Year,
                 Month = Month,
-                Report = Report,
                 Day = Day,
+                Report = Report,
                 BaseSymbol = BaseSymbol,
                 BuysCount = BuysCount,
                 CurrentInventory = CurrentInventory,

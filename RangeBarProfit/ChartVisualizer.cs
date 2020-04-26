@@ -178,7 +178,7 @@ namespace RangeBarProfit
             //pl.schr(0, 1.25);
 
             pl.env(xMin, xMax, yMin, yMax, AxesScale.Independent, AxisBox.BoxTicksLabelsAxes);
-            pl.lab("Days", "Balance", name);
+            pl.lab("Days", "Profit", name);
 
             pl.col0(12);
             pl.line(dayX, dayY);
