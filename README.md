@@ -39,6 +39,8 @@ Write strategy that implements interface `IStrategy`, see example [ones](SimpleB
 Configure app via json file, see example [appsettings.json](SimpleBacktester/appsettings.json)
 
 
+---
+
 **Pull Requests are welcome!**
 
 
