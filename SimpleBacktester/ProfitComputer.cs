@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using RangeBarProfit.Strategies;
-using Action = RangeBarProfit.Strategies.Action;
+using SimpleBacktester.Data;
+using SimpleBacktester.Strategies;
+using Action = SimpleBacktester.Strategies.Action;
 
-namespace RangeBarProfit
+namespace SimpleBacktester
 {
     public class ProfitComputer
     {
@@ -75,7 +76,7 @@ namespace RangeBarProfit
                     var trade = new TradeModel()
                     {
                         Timestamp = bar.Timestamp,
-                        Price = bar.Ask,
+                        Price = bar.Ask ?? bar.CurrentPrice,
                         Amount = orderSize,
                         BarIndex = _bars.Count,
                         CurrentInventory = _currentInventory,
@@ -109,7 +110,7 @@ namespace RangeBarProfit
                     var trade = new TradeModel()
                     {
                         Timestamp = bar.Timestamp,
-                        Price = bar.Bid,
+                        Price = bar.Bid ?? bar.CurrentPrice,
                         Amount = orderSize * (-1),
                         BarIndex = _bars.Count,
                         CurrentInventory = _currentInventory,
@@ -132,7 +133,7 @@ namespace RangeBarProfit
                 var trade = new TradeModel()
                 {
                     Timestamp = bar.Timestamp,
-                    Price = bar.Bid,
+                    Price = bar.Bid ?? bar.CurrentPrice,
                     Amount = Math.Abs(_currentInventory * _orderSize) * (-1),
                     BarIndex = _bars.Count,
                     CurrentInventory = 0,
@@ -146,7 +147,7 @@ namespace RangeBarProfit
                 var trade = new TradeModel()
                 {
                     Timestamp = bar.Timestamp,
-                    Price = bar.Ask,
+                    Price = bar.Ask ?? bar.CurrentPrice,
                     Amount = Math.Abs(_currentInventory * _orderSize),
                     BarIndex = _bars.Count,
                     CurrentInventory = 0,
@@ -263,6 +264,7 @@ namespace RangeBarProfit
         {
             var cleanTrades = RemoveOpenedTrades(trades);
             var info = StatsComputer.ComputeProfitComplex(cleanTrades, 0);
+            var infoWithFee = StatsComputer.ComputeProfitComplex(cleanTrades, _feePercentage);
 
             info.BaseSymbol = _baseSymbol;
             info.QuoteSymbol = _quoteSymbol;
@@ -272,7 +274,7 @@ namespace RangeBarProfit
             info.MaxInventory = _maxInventory;
             info.MaxInventoryLimit = _maxLimitInventory;
 
-            //info.PnlWithFee = pnlWithFee,
+            info.PnlWithFee = infoWithFee.Pnl;
 
             return info;
         }

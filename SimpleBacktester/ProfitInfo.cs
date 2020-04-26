@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace RangeBarProfit
+namespace SimpleBacktester
 {
     [DebuggerDisplay("Report [{Day}/{Month}/{Year}] t: {TradesCount} pnl: {Pnl.ToString(\"0.00\")} ({PnlNoExcess.ToString(\"0.00\")}) avg: {AverageBuy.ToString(\"0.00\")}/{AverageSell.ToString(\"0.00\")}")]
     public class ProfitInfo

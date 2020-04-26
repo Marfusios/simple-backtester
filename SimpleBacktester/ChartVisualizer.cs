@@ -1,25 +1,32 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using PLplot;
+using SimpleBacktester.Data;
 
-namespace RangeBarProfit
+namespace SimpleBacktester
 {
     public class ChartVisualizer
     {
-        public void Plot(string name, string filename, RangeBarModel[] prices, TradeModel[] orders, ProfitInfo[] days)
+        public void Plot(string name, string filename, int totalBars, RangeBarModel[] prices, TradeModel[] orders, ProfitInfo[] days)
         {
             if (!prices.Any())
                 return;
 
             var filenameSafe = CheckFilename(filename);
+
+            // ISSUE: "Cannot find support PLplot support files in System.String[]."
+            // SOLUTION: copy 'runtimes' directory
+            //     from ==> M:\ProjectFolder\bin\Debug\netcoreapp3.1\runtimes
+            //     to   ==> M:\ProjectFolder\bin\runtimes
             var pl = InitPlot(filenameSafe);
 
             
             pl.star(2, 2);
 
-            PlotTrades($"{name} trades (by bar)", prices, orders, false, pl);
-            PlotTrades("trades (by time)", prices, orders, true, pl);
+            PlotTrades($"{name} trades (by bar)", totalBars, prices, orders, false, pl);
+            PlotTrades("trades (by time)", totalBars, prices, orders, true, pl);
             PlotPnl("Pnl (total)", days, true, pl);
             PlotPnl("Pnl (per day)", days, false, pl);
 
@@ -30,7 +37,7 @@ namespace RangeBarProfit
             ((IDisposable)pl).Dispose();
         }
 
-        private static void PlotTrades(string name, RangeBarModel[] prices, TradeModel[] orders, bool byTime,
+        private static void PlotTrades(string name, int totalBars, RangeBarModel[] prices, TradeModel[] orders, bool byTime,
             PLStream pl)
         {
             var priceCount = prices.Length;
@@ -44,7 +51,7 @@ namespace RangeBarProfit
 
                 priceTimestamp[j] = price.Timestamp;
                 priceX[j] = byTime ? price.Timestamp : j;
-                priceY[j] = price.Mid;
+                priceY[j] = price.CurrentPrice;
             }
 
             var buys = orders
@@ -86,8 +93,8 @@ namespace RangeBarProfit
             // set axis limits
             var xMin = byTime ? prices.First().Timestamp - 10000 : 0;
             var xMax = byTime ? prices.Last().Timestamp + 10000 : prices.Length + 1;
-            var yMin = prices.Min(x => x.Mid);
-            var yMax = prices.Max(x => x.Mid);
+            var yMin = prices.Min(x => x.CurrentPrice);
+            var yMax = prices.Max(x => x.CurrentPrice);
 
             yMin = yMin - (yMin * 0.001);
             yMax = yMax + (yMax * 0.001);
@@ -103,7 +110,7 @@ namespace RangeBarProfit
             if (byTime)
                 pl.lab($"Timestamp (to {prices.LastOrDefault()?.TimestampDate:d})", "Price", name);
             else
-                pl.lab($"Bars (first {prices.Length})", "Price", name);
+                pl.lab($"Bars (first {prices.Length} of {totalBars})", "Price", name);
             //pl.timefmt("%s");
 
             // plot using different colors
@@ -199,7 +206,7 @@ namespace RangeBarProfit
                 filenameSafe = $"{filenameSafe}.svg";
             }
 
-            return filenameSafe;
+            return Path.GetFullPath(filenameSafe);
         }
 
 

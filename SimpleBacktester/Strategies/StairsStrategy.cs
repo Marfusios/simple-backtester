@@ -1,4 +1,6 @@
-﻿namespace RangeBarProfit.Strategies
+﻿using SimpleBacktester.Data;
+
+namespace SimpleBacktester.Strategies
 {
     public class StairsStrategy : IStrategy
     {
@@ -20,8 +22,8 @@
             }
 
 
-            var open = _lastBar.Mid;
-            var close = bar.Mid;
+            var open = _lastBar.CurrentPrice;
+            var close = bar.CurrentPrice;
 
             if (!_preserverLastBar)
             {

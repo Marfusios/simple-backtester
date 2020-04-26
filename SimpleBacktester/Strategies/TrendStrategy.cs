@@ -1,6 +1,7 @@
 ﻿using System;
+using SimpleBacktester.Data;
 
-namespace RangeBarProfit.Strategies
+namespace SimpleBacktester.Strategies
 {
     public class TrendStrategy : IStrategy
     {
@@ -34,7 +35,7 @@ namespace RangeBarProfit.Strategies
                 return Action.Nothing;
             }
 
-            _lastMidChange = bar.Mid - _lastBar.Mid;
+            _lastMidChange = bar.CurrentPrice - _lastBar.CurrentPrice;
             _lastBar = bar;
 
             if (Math.Abs(_lastMidChange) < 0.00001)

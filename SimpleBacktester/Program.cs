@@ -6,9 +6,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using CsvHelper;
-using RangeBarProfit.Strategies;
+using SimpleBacktester.Data;
+using SimpleBacktester.Strategies;
 
-namespace RangeBarProfit
+namespace SimpleBacktester
 {
     class Program
     {
@@ -67,6 +68,9 @@ namespace RangeBarProfit
                 backtest.Amount ??= config.Base.Amount;
                 backtest.DirectoryPath ??= config.Base.DirectoryPath;
                 backtest.FilePattern ??= config.Base.FilePattern;
+
+                backtest.TimestampType ??= config.Base.TimestampType;
+                backtest.TimestampDecimals ??= config.Base.TimestampDecimals;
 
                 backtest.FeePercentage ??= config.Base.FeePercentage;
                 backtest.DisplayFee ??= config.Base.DisplayFee;
@@ -142,7 +146,7 @@ namespace RangeBarProfit
                 var computer = new ProfitComputer(strategy, backtest, maxInventory);
                 foreach (var file in files)
                 {
-                    var bars = LoadBars(file);
+                    var bars = LoadBars(backtest, file);
                     computer.ProcessBars(bars);
                     lastBar = bars.LastOrDefault();
                 }
@@ -191,12 +195,43 @@ namespace RangeBarProfit
             Console.WriteLine();
         }
 
-        private static RangeBarModel[] LoadBars(string file)
+        private static RangeBarModel[] LoadBars(BacktestConfig config, string file)
         {
             using var reader = new StreamReader(file);
             using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
             csv.Configuration.PrepareHeaderForMatch = (header, index) => header.ToLower();
-            return csv.GetRecords<RangeBarModel>().ToArray();
+            csv.Configuration.HeaderValidated = null;
+            csv.Configuration.MissingFieldFound = null;
+            var bars = csv.GetRecords<RangeBarModel>().ToArray();
+            FixTimestamp(config, bars);
+            var ordered = bars.OrderBy(x => x.TimestampDate).ToArray();
+            return ordered;
+        }
+
+        private static void FixTimestamp(BacktestConfig config, RangeBarModel[] bars)
+        {
+            if (string.IsNullOrWhiteSpace(config.TimestampType) || config.TimestampType == "unix-sec")
+            {
+                // default valid timestamp format, do nothing
+                return;
+            }
+
+            foreach (var bar in bars)
+            {
+                var t = bar.Timestamp;
+                var d = config.TimestampDecimals ?? 0;
+                var converted = t;
+
+                switch (config.TimestampType)
+                {
+                    case "unix-ms":
+                    case "ms":
+                        converted = t / (Math.Pow(10, d));
+                        break;
+                }
+
+                bar.Timestamp = converted;
+            }
         }
 
         private static string[] LoadAllFiles(string dirPath, string filePattern)
@@ -239,6 +274,7 @@ namespace RangeBarProfit
             }
 
             var bars = computer.Bars;
+            var totalBars = bars.Length;
             if (backtest.VisualizeSkipBars.HasValue)
                 bars = bars.Skip(backtest.VisualizeSkipBars.Value).ToArray();
             if (backtest.VisualizeLimitBars.HasValue)
@@ -251,7 +287,7 @@ namespace RangeBarProfit
                 .Where(x => x.BarIndex >= minIndex && x.BarIndex <= maxIndex)
                 .ToArray();
 
-            chart.Plot(name, targetFile, bars, trades, days);
+            chart.Plot(name, targetFile, totalBars, bars, trades, days);
         }
 
         private static string GetPathToReportDir(BacktestConfig backtest)

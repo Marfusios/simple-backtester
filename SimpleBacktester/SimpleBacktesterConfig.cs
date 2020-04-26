@@ -1,4 +1,4 @@
-﻿namespace RangeBarProfit
+﻿namespace SimpleBacktester
 {
     public class SimpleBacktesterConfig
     {

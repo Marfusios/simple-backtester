@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using SimpleBacktester.Data;
 
-namespace RangeBarProfit.Strategies
+namespace SimpleBacktester.Strategies
 {
     public class WindowStrategy : IStrategy
     {
@@ -42,8 +43,8 @@ namespace RangeBarProfit.Strategies
             var fractal = FractalEfficiency(shortBars);
 
 
-            var minMid = _bars.Min(x => x.Mid);
-            var maxMid = _bars.Max(x => x.Mid);
+            var minMid = _bars.Min(x => x.CurrentPrice);
+            var maxMid = _bars.Max(x => x.CurrentPrice);
 
             var currentBar = bar;
 
@@ -65,7 +66,7 @@ namespace RangeBarProfit.Strategies
                 //return Action.Nothing;
             }
 
-            if (currentBar.Mid >= maxMid && fractal > fractalLimit)
+            if (currentBar.CurrentPrice >= maxMid && fractal > fractalLimit)
             {
                 // entry
                 _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
@@ -73,7 +74,7 @@ namespace RangeBarProfit.Strategies
                 return Action.Buy;
             }
 
-            if (currentBar.Mid <= minMid && fractal > fractalLimit)
+            if (currentBar.CurrentPrice <= minMid && fractal > fractalLimit)
             {
                 // entry
                 _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
@@ -87,7 +88,7 @@ namespace RangeBarProfit.Strategies
         private double FractalEfficiency(RangeBarModel[] bars)
         {
             var count = bars.Length;
-            var absPath = Math.Abs(bars[count - 1].Mid - bars[0].Mid);
+            var absPath = Math.Abs(bars[count - 1].CurrentPrice - bars[0].CurrentPrice);
             var diff = ComputeDiff(bars);
             var sumPath = diff.Select(Math.Abs).Sum();
             //return Math.Round(absPath / sumPath, 4);
@@ -100,19 +101,8 @@ namespace RangeBarProfit.Strategies
             {
                 var current = bars[i];
                 var before = bars[i - 1];
-                yield return current.Mid - before.Mid;
+                yield return current.CurrentPrice - before.CurrentPrice;
             }
         }
-
-
-        /*
-         *
-            def fractal_efficiency(array) -> float:
-                abs_path = abs(array[-1] - array[0])
-                sum_path = np.sum(np.abs(np.diff(array)))
-                fractal_efficiency = round(abs_path / sum_path, 4)
-                return fractal_efficiency
-         *
-         */
     }
 }

@@ -217,9 +217,4 @@ report/
 
 .vscode/
 
-bitmex_raw_xbtusd_2019-03-22.txt
-bitmex_raw_ethusd_2019-03-22.txt
-bitmex_raw_xbtusd_2019-04-01.txt
-bitmex_raw_xbtusd_2019-05-11.txt
-bitmex_raw_xbtusd_2019-06-26.txt
-bitmex_raw_xbtusd_2019-07-25.txt
+/RangeBarProfit/Strategies/WindowStrategy.cs

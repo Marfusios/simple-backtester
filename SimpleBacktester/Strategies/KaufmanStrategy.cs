@@ -1,4 +1,6 @@
-﻿namespace RangeBarProfit.Strategies
+﻿using SimpleBacktester.Data;
+
+namespace SimpleBacktester.Strategies
 {
     public class KaufmanStrategy : IStrategy
     {
@@ -27,7 +29,7 @@
                 return Action.Nothing;
             }
 
-            if (bar.Mid > oldBar.Mid)
+            if (bar.CurrentPrice > oldBar.CurrentPrice)
             {
                 _upScore += 1;
             }
@@ -36,7 +38,7 @@
                 _upScore = 0;
             }
 
-            if (bar.Mid < oldBar.Mid)
+            if (bar.CurrentPrice < oldBar.CurrentPrice)
             {
                 _downScore += 1;
             }

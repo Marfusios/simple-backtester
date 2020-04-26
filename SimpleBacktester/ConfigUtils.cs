@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
 
-namespace RangeBarProfit
+namespace SimpleBacktester
 {
     public class ConfigUtils
     {

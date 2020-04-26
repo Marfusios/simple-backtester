@@ -1,4 +1,6 @@
-﻿namespace RangeBarProfit.Strategies
+﻿using SimpleBacktester.Data;
+
+namespace SimpleBacktester.Strategies
 {
     public enum Action
     {

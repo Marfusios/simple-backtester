@@ -1,4 +1,6 @@
-﻿namespace RangeBarProfit.Strategies
+﻿using SimpleBacktester.Data;
+
+namespace SimpleBacktester.Strategies
 {
     public class NaiveFollowerStrategy : IStrategy
     {
@@ -20,7 +22,7 @@
             }
 
             var previousMidChange = _lastMidChange;
-            _lastMidChange = bar.Mid - _lastBar.Mid;
+            _lastMidChange = bar.CurrentPrice - _lastBar.CurrentPrice;
 
             var lastUp = previousMidChange >= 0;
             _lastBar = bar;

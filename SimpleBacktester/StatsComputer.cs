@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace RangeBarProfit
+namespace SimpleBacktester
 {
     public class StatsComputer
     {
         public static double ComputeProfitNoExcess(TradeModel[] executedOrders, double fee)
         {
             double diff = 0;
-            var bids = executedOrders.Where(x => x.Amount > 0).ToArray();
-            var asks = executedOrders.Where(x => x.Amount < 0).ToArray();
+            var bids = executedOrders.Where(x => x.Amount > 0).OrderBy(x => x.Timestamp).ToArray();
+            var asks = executedOrders.Where(x => x.Amount < 0).OrderBy(x => x.Timestamp).ToArray();
 
             var bidAmount = bids.Sum(x => x.Amount);
             var askAmount = asks.Sum(x => Math.Abs(x.Amount));
@@ -59,8 +57,8 @@ namespace RangeBarProfit
         public static ProfitInfo ComputeProfitComplex(TradeModel[] executedOrders, double fee)
         {
             double diff = 0;
-            var bids = executedOrders.Where(x => x.Amount > 0).ToArray();
-            var asks = executedOrders.Where(x => x.Amount < 0).ToArray();
+            var bids = executedOrders.Where(x => x.Amount > 0).OrderBy(x => x.Timestamp).ToArray();
+            var asks = executedOrders.Where(x => x.Amount < 0).OrderBy(x => x.Timestamp).ToArray();
 
             var totalBidAmount = bids.Sum(x => Math.Abs(x.Amount));
             var totalAskAmount = asks.Sum(x => Math.Abs(x.Amount));

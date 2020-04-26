@@ -1,4 +1,4 @@
-﻿namespace RangeBarProfit
+﻿namespace SimpleBacktester
 {
     public class BacktestConfig
     {
@@ -7,6 +7,9 @@
         public double? Amount { get; set; }
         public string DirectoryPath { get; set; }
         public string FilePattern { get; set; } = "*.csv";
+
+        public string TimestampType { get; set; }
+        public int? TimestampDecimals { get; set; }
 
         public double? FeePercentage { get; set; }
         public bool? DisplayFee { get; set; }
