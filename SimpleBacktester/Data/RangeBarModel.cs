@@ -7,7 +7,22 @@ namespace SimpleBacktester.Data
     [DebuggerDisplay("Bar {Index} {TimestampDate} {CurrentPrice}")]
     public class RangeBarModel
     {
+        private DateTime? _date;
+
         public double Timestamp { get; set; }
+
+        public DateTime? Date
+        {
+            get => _date;
+            set
+            {
+                if (value == null)
+                    return;
+
+                _date = DateTime.SpecifyKind(value.Value, DateTimeKind.Utc);
+                Timestamp = DateUtils.ToUnixSeconds(_date.Value);
+            }
+        }
 
         public double? Mid { get; set; }
 
@@ -23,10 +38,13 @@ namespace SimpleBacktester.Data
         public double CurrentPrice => Close ?? Mid ?? 0;
 
         [Ignore]
+        public double InitialPrice => Open ?? Mid ?? 0;
+
+        [Ignore]
         public int Index { get; set; }
 
         [Ignore]
-        public DateTime TimestampDate => DateUtils.ConvertToTimeFromSec(Timestamp);
+        public DateTime TimestampDate => Date ?? DateUtils.ConvertToTimeFromSec(Timestamp);
 
 
         // TODO: make generic

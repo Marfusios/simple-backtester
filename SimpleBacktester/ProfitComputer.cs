@@ -159,52 +159,37 @@ namespace SimpleBacktester
 
         public ProfitInfo GetReport()
         {
-            var rep = GetReport(_trades.ToArray());
+            var rep = GetReport(_trades.ToArray(), null);
             return rep;
         }
 
         public ProfitInfo[] GetReportByMonth()
         {
-            var grouped = _trades.GroupBy(x => new { x.TimestampDate.Year, x.TimestampDate.Month });
+            var grouped = _trades
+                .GroupBy(x => new { x.TimestampDate.Year, x.TimestampDate.Month })
+                .ToArray();
             var reports = new List<ProfitInfo>();
+            var reportsDay = new List<ProfitInfo>();
 
-            ProfitInfo total = null;
-
-            foreach (var group in grouped)
+            for (int i = 0; i < grouped.Length; i++)
             {
+                var group = grouped[i];
+                var nextTrades = grouped
+                    .Skip(i+1)
+                    .SelectMany(x => x)
+                    .OrderBy(x => x.TimestampDate)
+                    .ToArray();
+
                 var trades = group.ToArray();
-                var monthReport = GetReport(trades.ToArray());
+                var monthReport = GetReport(trades.ToArray(), nextTrades);
+                if(monthReport == ProfitInfo.Empty)
+                    continue;
+
                 var formatted = $"month: {group.Key.Month:00}/{group.Key.Year}, {monthReport}";
                 monthReport.Report = formatted;
                 monthReport.Year = group.Key.Year;
                 monthReport.Month = group.Key.Month;
                 reports.Add(monthReport);
-
-                if (total == null)
-                {
-                    total = monthReport.Clone();
-                    total.AverageBuy = 0;
-                    total.AverageSell = 0;
-                }
-                else
-                {
-                    total.TradesCount += monthReport.TradesCount;
-                    total.BuysCount += monthReport.BuysCount;
-                    total.SellsCount += monthReport.SellsCount;
-                    total.TotalBought += monthReport.TotalBought;
-                    total.TotalSold += monthReport.TotalSold;
-                    total.Pnl += monthReport.Pnl;
-                    total.PnlNoExcess += monthReport.PnlNoExcess;
-                    total.PnlWithFee += monthReport.PnlWithFee;
-                }
-            }
-
-            if (total != null)
-            {
-                var formattedTotal = $"total: __, {total}";
-                total.Report = formattedTotal;
-                total.Month = null;
-                reports.Add(total);
             }
 
             return reports.ToArray();
@@ -213,16 +198,27 @@ namespace SimpleBacktester
         public ProfitInfo[] GetReportPerDays(int year, int month)
         {
             var grouped = _trades
-                .Where(x => x.TimestampDate.Month == month)
-                .GroupBy(x => x.TimestampDate.Day);
+                .Where(x => x.TimestampDate.Year == year && x.TimestampDate.Month == month)
+                .GroupBy(x => x.TimestampDate.Day)
+                .ToArray();
             var reports = new List<ProfitInfo>();
 
             ProfitInfo total = null;
 
-            foreach (var group in grouped)
+            for (int i = 0; i < grouped.Length; i++)
             {
+                var group = grouped[i];
+                var last = group.Last();
+                var nextTrades = _trades
+                    .Where(x => x.TimestampDate > last.TimestampDate)
+                    .OrderBy(x => x.TimestampDate)
+                    .ToArray();
+
                 var trades = group.ToArray();
-                var dayReport = GetReport(trades.ToArray());
+                var dayReport = GetReport(trades.ToArray(), nextTrades);
+                if (dayReport == ProfitInfo.Empty)
+                    continue;
+
                 var formatted = $"day:   {group.Key:00}, {dayReport}";
                 dayReport.Report = formatted;
                 dayReport.Day = group.Key;
@@ -233,8 +229,8 @@ namespace SimpleBacktester
                 if (total == null)
                 {
                     total = dayReport.Clone();
-                    total.AverageBuy = 0;
-                    total.AverageSell = 0;
+                    total.AverageBuyPrice = 0;
+                    total.AverageSellPrice = 0;
                 }
                 else
                 {
@@ -243,28 +239,73 @@ namespace SimpleBacktester
                     total.SellsCount += dayReport.SellsCount;
                     total.TotalBought += dayReport.TotalBought;
                     total.TotalSold += dayReport.TotalSold;
+                    total.TotalBoughtQuote += dayReport.TotalBoughtQuote;
+                    total.TotalSoldQuote += dayReport.TotalSoldQuote;
                     total.Pnl += dayReport.Pnl;
                     total.PnlNoExcess += dayReport.PnlNoExcess;
                     total.PnlWithFee += dayReport.PnlWithFee;
                 }
             }
 
-            if (total != null)
-            {
-                var formattedTotal = $"total: __, {total}";
-                total.Report = formattedTotal;
-                total.Day = null;
-                reports.Add(total);
-            }
+            //if (total != null)
+            //{
+            //    var formattedTotal = $"total: __, {total}";
+            //    total.Report = formattedTotal;
+            //    total.Day = null;
+            //    reports.Add(total);
+            //}
 
             return reports.ToArray();
         }
 
-        private ProfitInfo GetReport(TradeModel[] trades)
+        public ProfitInfo GetTotalReport(ProfitInfo[] profits)
         {
+            var total = new ProfitInfo();
+
+            foreach (var profit in profits)
+            {
+                total.TradesCount += profit.TradesCount;
+                total.BuysCount += profit.BuysCount;
+                total.SellsCount += profit.SellsCount;
+                total.TotalBought += profit.TotalBought;
+                total.TotalSold += profit.TotalSold;
+                total.TotalBoughtQuote += profit.TotalBoughtQuote;
+                total.TotalSoldQuote += profit.TotalSoldQuote;
+                total.Pnl += profit.Pnl;
+                total.PnlNoExcess += profit.PnlNoExcess;
+                total.PnlWithFee += profit.PnlWithFee;
+                total.DisplayWithFee = profit.DisplayWithFee;
+                total.QuoteSymbol = profit.QuoteSymbol;
+                total.BaseSymbol = profit.BaseSymbol;
+                total.MaxInventory = profit.MaxInventory;
+                total.MaxInventoryLimit = profit.MaxInventoryLimit;
+                total.OrderSize = profit.OrderSize;
+            }
+
+            total.AverageBuyPrice = total.TotalBoughtQuote / total.TotalBought;
+            total.AverageSellPrice = total.TotalSoldQuote / total.TotalSold;
+
+            var formattedTotal = $"{total} with excess";
+            total.Report = formattedTotal;
+            total.Day = null;
+            total.Month = null;
+            total.Year = null;
+            return total;
+        }
+
+        private ProfitInfo GetReport(TradeModel[] trades, TradeModel[] nextTrades)
+        {
+            nextTrades ??= Array.Empty<TradeModel>();
+
             var cleanTrades = RemoveOpenedTrades(trades);
-            var info = StatsComputer.ComputeProfitComplex(cleanTrades, 0);
-            var infoWithFee = StatsComputer.ComputeProfitComplex(cleanTrades, _feePercentage);
+            if (!cleanTrades.Any())
+                return ProfitInfo.Empty;
+
+            var closing = GetClosingTrades(nextTrades);
+            var withCloses = cleanTrades.Concat(closing).ToArray();
+
+            var info = StatsComputer.ComputeProfitComplex(withCloses, 0);
+            var infoWithFee = StatsComputer.ComputeProfitComplex(withCloses, _feePercentage);
 
             info.BaseSymbol = _baseSymbol;
             info.QuoteSymbol = _quoteSymbol;
@@ -287,6 +328,20 @@ namespace SimpleBacktester
 
             return trades
                 .SkipWhile(x => x != firstOpenIndex)
+                .ToArray();
+        }
+
+        private TradeModel[] GetClosingTrades(TradeModel[] trades)
+        {
+            var firstOpenIndex = trades.FirstOrDefault(x => x.PositionState == PositionState.Open);
+            if (firstOpenIndex == null)
+            {
+                // all closing
+                return trades;
+            }
+
+            return trades
+                .TakeWhile(x => x != firstOpenIndex)
                 .ToArray();
         }
 

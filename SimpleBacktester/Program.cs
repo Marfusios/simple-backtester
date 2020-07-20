@@ -182,11 +182,16 @@ namespace SimpleBacktester
                     }
                 }
 
+                var totalReportAllDays = computer.GetTotalReport(reportDays.ToArray());
+                builderTop.AppendLine($"{totalReportAllDays.Report}");
+
                 builderTop.AppendLine();
                 builder.AppendLine();
                 builder.AppendLine();
 
-                Visualize(backtest, computer, strategy, maxInventory, report, reportDays.ToArray());
+                Visualize(backtest, computer, strategy, maxInventory, report, 
+                    reportDays.ToArray(), 
+                    perMonth.Where(x => x.Month.HasValue).ToArray());
             }
 
             var mergedReport = $"{builderTop}{Environment.NewLine}{builder}";
@@ -210,7 +215,9 @@ namespace SimpleBacktester
 
         private static void FixTimestamp(BacktestConfig config, RangeBarModel[] bars)
         {
-            if (string.IsNullOrWhiteSpace(config.TimestampType) || config.TimestampType == "unix-sec")
+            if (string.IsNullOrWhiteSpace(config.TimestampType) || 
+                config.TimestampType == "unix-sec" ||
+                config.TimestampType == "date")
             {
                 // default valid timestamp format, do nothing
                 return;
@@ -254,7 +261,7 @@ namespace SimpleBacktester
         }
 
         private static void Visualize(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy, 
-            int maxInv, ProfitInfo report, ProfitInfo[] days)
+            int maxInv, ProfitInfo report, ProfitInfo[] days, ProfitInfo[] months)
         {
             if (computer == null || backtest.Visualize == null || !backtest.Visualize.Value)
                 return;
@@ -263,7 +270,9 @@ namespace SimpleBacktester
             var filename = Path.GetFileName(backtest.DirectoryPath);
             var strategyName = strategy.GetType().Name.ToLower();
             var pnl = report.Pnl;
-            var name = $"pnl: {pnl:#.00} {backtest.QuoteSymbol} (max inv: {maxInv}) ";
+            var name = $"{pnl:#.00} {backtest.QuoteSymbol} (max inv: {maxInv}) ";
+            var nameWithFee = $"{report.PnlWithFee:#.00} {backtest.QuoteSymbol} (max inv: {maxInv}) ";
+
             var dir = GetPathToReportDir(backtest);
             var pattern = ExtractFromPattern(backtest);
             var targetFile = Path.Combine(dir, $"{pattern}__{strategyName}__{maxInv}__{pnl:0}");
@@ -287,7 +296,7 @@ namespace SimpleBacktester
                 .Where(x => x.BarIndex >= minIndex && x.BarIndex <= maxIndex)
                 .ToArray();
 
-            chart.Plot(name, targetFile, totalBars, bars, trades, days);
+            chart.Plot(name, nameWithFee, targetFile, totalBars, bars, trades, days, months);
         }
 
         private static string GetPathToReportDir(BacktestConfig backtest)

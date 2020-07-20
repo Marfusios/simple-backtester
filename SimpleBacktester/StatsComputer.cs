@@ -64,6 +64,9 @@ namespace SimpleBacktester
             var totalAskAmount = asks.Sum(x => Math.Abs(x.Amount));
             var excessAmount = totalBidAmount - totalAskAmount;
 
+            var totalBidQuote = bids.Sum(x => Math.Abs(x.Amount * x.Price));
+            var totalAskQuote = asks.Sum(x => Math.Abs(x.Amount * x.Price));
+
             var result = new ProfitInfo()
             {
                 Pnl = 0,
@@ -72,8 +75,10 @@ namespace SimpleBacktester
                 SellsCount = asks.Length,
                 TotalBought = totalBidAmount,
                 TotalSold = totalAskAmount,
-                AverageBuy = ComputeAveragePrice(bids),
-                AverageSell = ComputeAveragePrice(asks),
+                TotalBoughtQuote = totalBidQuote,
+                TotalSoldQuote = totalAskQuote,
+                AverageBuyPrice = ComputeAveragePrice(bids),
+                AverageSellPrice = ComputeAveragePrice(asks),
                 ExcessAmount = excessAmount
             };
 
@@ -131,8 +136,8 @@ namespace SimpleBacktester
             }
 
             var totalDiff = diff + lastTrade;
-            result.Pnl = totalDiff;
             result.PnlNoExcess = ComputeProfitNoExcess(executedOrders, fee);
+            result.Pnl = totalDiff;
             return result;
         }
 

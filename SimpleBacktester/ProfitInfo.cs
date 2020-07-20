@@ -2,7 +2,7 @@
 
 namespace SimpleBacktester
 {
-    [DebuggerDisplay("Report [{Day}/{Month}/{Year}] t: {TradesCount} pnl: {Pnl.ToString(\"0.00\")} ({PnlNoExcess.ToString(\"0.00\")}) avg: {AverageBuy.ToString(\"0.00\")}/{AverageSell.ToString(\"0.00\")}")]
+    [DebuggerDisplay("Report [{Day}/{Month}/{Year}] t: {TradesCount} pnl: {Pnl.ToString(\"0.00\")} ({PnlNoExcess.ToString(\"0.00\")}) avg: {AverageBuyPrice.ToString(\"0.00\")}/{AverageSellPrice.ToString(\"0.00\")}")]
     public class ProfitInfo
     {
 
@@ -13,8 +13,11 @@ namespace SimpleBacktester
         public double TotalBought { get; set; }
         public double TotalSold { get; set; }
 
-        public double AverageBuy { get; set; }
-        public double AverageSell { get; set; }
+        public double TotalBoughtQuote { get; set; }
+        public double TotalSoldQuote { get; set; }
+
+        public double AverageBuyPrice { get; set; }
+        public double AverageSellPrice { get; set; }
 
         public string QuoteSymbol { get; set; }
         public string BaseSymbol { get; set; }
@@ -46,8 +49,8 @@ namespace SimpleBacktester
         {
             var feeString = DisplayWithFee ? $"(with fee: {PnlWithFee:#.00} {QuoteSymbol})" : string.Empty;
             return $"trades {TradesCount,5} " +
-                   $"(b: {BuysCount,5}/{AverageBuy,8:#.00} {QuoteSymbol}, s: {SellsCount,5}/{AverageSell,8:#.00} {QuoteSymbol}), " +
-                   $"Inv: {CurrentInventory * OrderSize} {BaseSymbol} (max: {MaxInventory * OrderSize}/{MaxInventoryLimit} {BaseSymbol}), " +
+                   $"(b: {BuysCount,5}/{AverageBuyPrice,8:#.00} {QuoteSymbol}, s: {SellsCount,5}/{AverageSellPrice,8:#.00} {QuoteSymbol}), " +
+                   $"Inv: {CurrentInventory * OrderSize} {BaseSymbol} (max: {MaxInventory * OrderSize}/{MaxInventoryLimit * OrderSize} {BaseSymbol}), " +
                    $"Pnl: {Pnl,10:#.00} {QuoteSymbol} {feeString}";
         }
 
@@ -56,8 +59,8 @@ namespace SimpleBacktester
             return new ProfitInfo()
             {
                 TradesCount = TradesCount,
-                AverageBuy = AverageBuy,
-                AverageSell = AverageSell,
+                AverageBuyPrice = AverageBuyPrice,
+                AverageSellPrice = AverageSellPrice,
                 Year = Year,
                 Month = Month,
                 Day = Day,
@@ -76,8 +79,12 @@ namespace SimpleBacktester
                 SellsCount = SellsCount,
                 ExcessAmount = ExcessAmount,
                 TotalBought = TotalBought,
-                TotalSold = TotalSold
+                TotalSold = TotalSold,
+                TotalBoughtQuote = TotalBoughtQuote,
+                TotalSoldQuote = TotalSoldQuote
             };
         }
+
+        public static readonly ProfitInfo Empty = new ProfitInfo();
     }
 }

@@ -25,6 +25,9 @@ namespace SimpleBacktester.Strategies
             var open = _lastBar.CurrentPrice;
             var close = bar.CurrentPrice;
 
+            //var open = bar.Open;
+            //var close = bar.Close;
+
             if (!_preserverLastBar)
             {
                 _lastBar = bar;

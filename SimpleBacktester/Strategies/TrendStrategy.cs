@@ -6,8 +6,8 @@ namespace SimpleBacktester.Strategies
     public class TrendStrategy : IStrategy
     {
         private readonly bool _aggressive;
+        private readonly int _trendBreak; 
 
-        private int _trendBreak = 4; 
         private int _trendCounter;
         private int _trendUpCounter;
         private int _trendDownCounter;
@@ -22,9 +22,10 @@ namespace SimpleBacktester.Strategies
         private bool _entryBuyPaused;
         private bool _entrySellPaused;
 
-        public TrendStrategy(bool aggressive)
+        public TrendStrategy(bool aggressive, int trendBreak)
         {
             _aggressive = aggressive;
+            _trendBreak = Math.Max(trendBreak, 1);
         }
 
         public Action Decide(RangeBarModel bar, double inventoryAbsolute)

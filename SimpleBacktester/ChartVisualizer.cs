@@ -9,7 +9,9 @@ namespace SimpleBacktester
 {
     public class ChartVisualizer
     {
-        public void Plot(string name, string filename, int totalBars, RangeBarModel[] prices, TradeModel[] orders, ProfitInfo[] days)
+        public void Plot(string name, string nameWithFee, string filename, int totalBars, 
+            RangeBarModel[] prices, TradeModel[] orders, 
+            ProfitInfo[] days, ProfitInfo[] months)
         {
             if (!prices.Any())
                 return;
@@ -23,12 +25,22 @@ namespace SimpleBacktester
             var pl = InitPlot(filenameSafe);
 
             
-            pl.star(2, 2);
+            pl.star(2, 3);
 
-            PlotTrades($"{name} trades (by bar)", totalBars, prices, orders, false, pl);
+            PlotTrades($"trades (by bar)", totalBars, prices, orders, false, pl);
             PlotTrades("trades (by time)", totalBars, prices, orders, true, pl);
-            PlotPnl("Pnl (total)", days, true, pl);
-            PlotPnl("Pnl (per day)", days, false, pl);
+
+            if (!PlotPnl($"Pnl (total) {name}", "Days", days, true, false, pl))
+                PlotPnl($"Pnl (total) {name} ", "Months", months, true, false, pl);
+
+            if (!PlotPnl("Pnl (per day)", "Days", days, false, false, pl))
+                PlotPnl("Pnl (per months)", "Months", months, false, false, pl);
+
+            if (!PlotPnl($"Pnl with fee (total) {nameWithFee}", "Days", days, true, true, pl))
+                PlotPnl($"Pnl with fee (total) {nameWithFee}", "Months", months, true, true, pl);
+
+            if (!PlotPnl("Pnl with fee (per day)", "Days", days, false, true, pl))
+                PlotPnl("Pnl with fee (per months)", "Months", months, false, true, pl);
 
             // end page (writes output to disk)
             pl.eop();
@@ -150,34 +162,40 @@ namespace SimpleBacktester
             pl.line(priceX, priceY);
         }
 
-        private void PlotPnl(string name, ProfitInfo[] days, bool total, PLStream pl)
+        private bool PlotPnl(string name, string xField, ProfitInfo[] items, bool total, bool withFee, PLStream pl)
         {
 
-            var daysCount = days.Length;
-            if (daysCount <= 0)
-                return;
+            var itemCount = items.Length;
+            if (itemCount <= 0)
+                return false;
 
-            var dayX = new double[daysCount];
-            var dayY = new double[daysCount];
+            var itemX = new double[itemCount];
+            var itemY = new double[itemCount];
             var totalPnl = 0.0;
 
-            for (var j = 0; j < daysCount; j++)
+            for (var j = 0; j < itemCount; j++)
             {
-                var day = days[j];
-                totalPnl += day.Pnl;
+                var item = items[j];
+                totalPnl += withFee ? item.PnlWithFee : item.Pnl;
 
-                dayX[j] = j;
-                dayY[j] = total ? totalPnl : day.Pnl;
+                itemX[j] = j;
+                itemY[j] = total ? totalPnl : (withFee ? item.PnlWithFee : item.Pnl);
             }
 
             // set axis limits
             var xMin = 0;
-            var xMax = dayX.Length + 1;
-            var yMin = dayY.Min();
-            var yMax = dayY.Max();
+            var xMax = itemX.Length + 1;
+            var yMin = itemY.Min();
+            var yMax = itemY.Max();
 
             yMin = yMin - (Math.Abs(yMin * 0.1));
             yMax = yMax + (Math.Abs(yMax * 0.1));
+
+            if (Math.Abs(yMin - yMax) <= 0e8)
+            {
+                // invalid scale, do not draw chart
+                return false;
+            }
 
             pl.col0(8);
 
@@ -185,10 +203,12 @@ namespace SimpleBacktester
             //pl.schr(0, 1.25);
 
             pl.env(xMin, xMax, yMin, yMax, AxesScale.Independent, AxisBox.BoxTicksLabelsAxes);
-            pl.lab("Days", "Profit", name);
+            pl.lab(xField, "Profit", name);
 
             pl.col0(12);
-            pl.line(dayX, dayY);
+            pl.line(itemX, itemY);
+
+            return true;
         }
 
 
