@@ -6,7 +6,7 @@
 ██████  ██   ██  ██████ ██   ██    ██    ███████ ███████    ██    ███████ ██   ██
 ```
 
-# Simple Backtester [![Build Status](https://travis-ci.com/Marfusios/simle-backtester.svg?branch=master)](https://travis-ci.com/Marfusios/simle-backtester) 
+# Simple Backtester [![Build Status](https://travis-ci.com/github/Marfusios/simple-backtester.svg?branch=master)](https://travis-ci.com/github/Marfusios/simple-backtester) 
 
 A very simple backtesting application for OHLC data (range bars)
 
