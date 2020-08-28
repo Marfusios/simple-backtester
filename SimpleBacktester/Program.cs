@@ -182,10 +182,10 @@ namespace SimpleBacktester
                     }
                 }
 
-                var totalReportAllDays = computer.GetTotalReport(reportDays.ToArray());
-                builderTop.AppendLine($"{totalReportAllDays.Report}");
+                //var totalReportAllDays = computer.GetTotalReport(reportDays.ToArray());
+                //builderTop.AppendLine($"{totalReportAllDays.Report}");
 
-                builderTop.AppendLine();
+                //builderTop.AppendLine();
                 builder.AppendLine();
                 builder.AppendLine();
 
