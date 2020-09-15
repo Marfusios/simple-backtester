@@ -1,13 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using CsvHelper;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using SimpleBacktester.Data;
 using SimpleBacktester.Strategies;
+using SimpleBacktester.Visualization;
+using TradingViewUdfProvider.Models;
 
 namespace SimpleBacktester
 {
@@ -43,6 +50,12 @@ namespace SimpleBacktester
             {
                 RunBacktest(backtest, strategyFactory);
             }
+
+            if(!config.RunWebVisualization)
+                return;
+
+            OpenBrowser("https://localhost:5001");
+            CreateVisualizationWebApp(args).Build().Run();
         }
 
         private static SimpleBacktesterConfig InitConfig(string environment)
@@ -246,7 +259,7 @@ namespace SimpleBacktester
             if(!Directory.Exists(dirPath))
                 return new string[0];
 
-            var files = Directory.EnumerateFiles(dirPath, filePattern);
+            var files = Directory.EnumerateFiles(dirPath, filePattern, SearchOption.AllDirectories);
             return files.OrderBy(x => x).ToArray();
         }
 
@@ -265,6 +278,8 @@ namespace SimpleBacktester
         {
             if (computer == null || backtest.Visualize == null || !backtest.Visualize.Value)
                 return;
+
+            PrepareWebVisualization(backtest, computer, strategy, maxInv, report, report, days, months);
 
             var chart = new ChartVisualizer();
             var filename = Path.GetFileName(backtest.DirectoryPath);
@@ -299,6 +314,71 @@ namespace SimpleBacktester
             chart.Plot(name, nameWithFee, targetFile, totalBars, bars, trades, days, months);
         }
 
+        private static void PrepareWebVisualization(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy, in int maxInv, 
+            ProfitInfo report, ProfitInfo profitInfo, ProfitInfo[] days, ProfitInfo[] months)
+        {
+            var numbers = Regex.Split(backtest.FilePattern, @"\D+");
+            var symbol = $"{backtest.BaseSymbol}/{backtest.QuoteSymbol}{string.Join('-', numbers)}_{maxInv}";
+            var ticker = $"{backtest.FilePattern}_{maxInv}";
+
+            var sym = new TvSymbolInfo()
+            {
+                Name = symbol,
+                Ticker = ticker,
+                Description = $"{maxInv}, {backtest.FilePattern}, {profitInfo.Pnl:#.00}" ,
+                Type = "bitcoin",
+                //ExchangeTraded = "Crypto",
+                //ExchangeListed = "Crypto",
+                //Timezone = "America/New_York",
+                MinMov = 1,
+                MinMov2 = 0,
+                PriceScale = 100,
+                //PointValue = 1,
+                //Session = "0930-1630",
+                Session = "24x7",
+                HasIntraday = true,
+                IntradayMultipliers = new []{ "1","60" },
+                HasSeconds = true,
+                SecondsMultipliers = new []{"1"},
+                HasNoVolume = false,
+                SupportedResolutions = new []{"1S","30S","1","60","120","240","D","2D","3D","W","3W","M","6M"},
+                CurrencyCode = backtest.QuoteSymbol,
+                OriginalCurrencyCode = backtest.QuoteSymbol,
+                VolumePrecision = 2
+            };
+            MyTvProvider.Symbols.Add(sym);
+
+            var bars = computer.Bars;
+            var convertedBars = bars
+                .Select(x => new TvBar()
+                {
+                    Timestamp = x.TimestampDate,
+                    Close = x.CurrentPrice,
+                    High = x.High,
+                    Low = x.Low,
+                    Open = x.Open,
+                    Volume = x.Volume
+                })
+                .ToArray();
+            MyTvProvider.Bars[ticker] = convertedBars;
+
+            var trades = computer.Trades;
+            var marks = trades
+                .Select((x, i) => new TvMark()
+                {
+                    Id = i,
+                    Color = x.Amount >= 0 ? "blue" : "orange",
+                    Label = x.Amount >= 0 ? "B" : "S",
+                    LabelFontColor = "black",
+                    MinSize = 7,
+                    Text = $"{x.BarIndex} {(x.Amount >= 0 ? "Buy" : "Sell")} {x.PositionState} " +
+                           $"amount: {x.Amount}, price: {x.Price}",
+                    Timestamp = x.TimestampDate
+                })
+                .ToArray();
+            MyTvProvider.Marks[ticker] = marks;
+        }
+
         private static string GetPathToReportDir(BacktestConfig backtest)
         {
             return Path.Combine(Path.GetDirectoryName(backtest.DirectoryPath), "reports");
@@ -316,6 +396,34 @@ namespace SimpleBacktester
                     .Trim('\\')
                     .Trim();
             return pattern;
+        }
+
+
+        public static IHostBuilder CreateVisualizationWebApp(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+
+        public static void OpenBrowser(string url)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Process.Start("xdg-open", url);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Process.Start("open", url);
+            }
+            else
+            {
+                // throw 
+            }
         }
     }
 }

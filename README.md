@@ -17,7 +17,9 @@ A very simple backtesting application for OHLC data (range bars)
 
 * cross platform
 * chart and text report
+* integrated TradingView charting library
 
+![TradingView report](docs/report_tv.png) 
 ![Chart report](docs/report_chart.png) 
 ![Text report](docs/report_text.png)
 ![Artefacts](docs/artefacts.png)

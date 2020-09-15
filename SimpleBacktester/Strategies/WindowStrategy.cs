@@ -50,21 +50,21 @@ namespace SimpleBacktester.Strategies
 
             var fractalLimit = 0.90;
 
-            if (hasPosition)
-            {
-                // exit
-                _currentPositionExitTimeSpan += currentBar.TimestampDiffMs;
+            //if (hasPosition)
+            //{
+            //    // exit
+            //    _currentPositionExitTimeSpan += currentBar.TimestampDiffMs;
 
-                if (_currentPositionExitTimeSpan >= _currentPositionEntryTimeSpan)
-                {
-                    if (inventoryAbsolute > 0)
-                        return Action.Sell;
-                    if (inventoryAbsolute < 0)
-                        return Action.Buy;
-                }
+            //    if (_currentPositionExitTimeSpan >= _currentPositionEntryTimeSpan)
+            //    {
+            //        if (inventoryAbsolute > 0)
+            //            return Action.Sell;
+            //        if (inventoryAbsolute < 0)
+            //            return Action.Buy;
+            //    }
 
-                //return Action.Nothing;
-            }
+            //    //return Action.Nothing;
+            //}
 
             if (currentBar.CurrentPrice >= maxMid && fractal > fractalLimit)
             {

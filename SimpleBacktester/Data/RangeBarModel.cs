@@ -34,6 +34,8 @@ namespace SimpleBacktester.Data
         public double? Low { get; set; }
         public double? Close { get; set; }
 
+        public double? Volume { get; set; }
+
         [Ignore] 
         public double CurrentPrice => Close ?? Mid ?? 0;
 

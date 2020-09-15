@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="wwwroot\charting_library\**" />
+    <Compile Remove="wwwroot\datafeeds\**" />
+    <Content Remove="wwwroot\charting_library\**" />
+    <Content Remove="wwwroot\datafeeds\**" />
+    <EmbeddedResource Remove="wwwroot\charting_library\**" />
+    <EmbeddedResource Remove="wwwroot\datafeeds\**" />
+    <None Remove="wwwroot\charting_library\**" />
+    <None Remove="wwwroot\datafeeds\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.0" />
+    <PackageReference Include="TradingView.Udf.Provider" Version="1.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Views\Home\Index.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+
+</Project>

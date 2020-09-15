@@ -7,5 +7,7 @@
 
         public BacktestConfig Base { get; set; }
         public BacktestConfig[] Backtests { get; set; }
+
+        public bool RunWebVisualization { get; set; }
     }
 }
