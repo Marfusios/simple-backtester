@@ -1,4 +1,5 @@
-﻿<!DOCTYPE HTML>
+﻿@using SimpleBacktester.Visualization
+<!DOCTYPE HTML>
 <html>
 <head>
 
@@ -25,7 +26,7 @@
             var widget = window.tvWidget = new TradingView.widget({
                 debug: true, // uncomment this line to see Library errors and warnings in the console
                 fullscreen: true,
-                symbol: 'BTC',
+                symbol: '@MyTvProvider.DefaultSymbol',
                 interval: '1D',
                 container_id: "tv_chart_container",
 
@@ -42,9 +43,132 @@
                 client_id: 'tradingview.dotnet',
                 user_id: 'public_user_id',
                 theme: getParameterByName('theme'),
+                custom_indicators_getter: function (PineJS) {
+                    return Promise.resolve([
+
+                        {
+                            name: "Buys",
+                            metainfo: {
+                                "_metainfoVersion": 40,
+                                "id": "Buys@@tv-basicstudies-1",
+                                "scriptIdPart": "",
+                                "name": "Buys",
+                                "description": "Buys",
+                                "shortDescription": "Buys",
+                                "is_hidden_study": false,
+                                "is_price_study": true,
+                                "isCustomIndicator": true,
+
+                                "plots": [{ "id": "plot_0", "type": "shapes" }],
+                                "defaults": {
+                                    "styles": {
+                                        "plot_0": {
+                                            visible: true,
+                                            plottype: 'shape_arrow_up',
+                                            location: 'BelowBar',
+                                            trackPrice: false,
+                                            transparency: 1,
+                                            color: "green",
+                                            //size: "huge"
+                                        }
+                                    },
+                                    "precision": 2,
+                                    "inputs": {}
+                                },
+                                "styles": {
+                                    "plot_0": {
+                                        "title": "Buys",
+                                        "histogramBase": 0
+                                    }
+                                },
+                                "inputs": []
+                            },
+
+                            constructor: function () {
+                                this.init = function (context, inputCallback) {
+                                    this._context = context;
+                                    this._input = inputCallback;
+                                    var info = widget.symbolInterval();
+                                    var symbol = 'trades__buys__' + info.symbol;
+                                    this._context.new_sym(symbol, PineJS.Std.period(this._context), PineJS.Std.period(this._context));
+                                };
+
+                                this.main = function (context, inputCallback) {
+                                    this._context = context;
+                                    this._input = inputCallback;
+                                    this._context.select_sym(1);
+                                    var v = PineJS.Std.close(this._context);
+                                    return [v];
+                                }
+                            }
+                        },
+                        {
+                            name: "Sells",
+                            metainfo: {
+                                "_metainfoVersion": 40,
+                                "id": "Sells@@tv-basicstudies-1",
+                                "scriptIdPart": "",
+                                "name": "Sells",
+                                "description": "Sells",
+                                "shortDescription": "Sells",
+                                "is_hidden_study": false,
+                                "is_price_study": true,
+                                "isCustomIndicator": true,
+
+                                "plots": [{ "id": "plot_0", "type": "shapes" }],
+                                "defaults": {
+                                    "styles": {
+                                        "plot_0": {
+                                            visible: true,
+                                            plottype: 'shape_arrow_down',
+                                            location: 'AboveBar',
+                                            trackPrice: true,
+                                            transparency: 1,
+                                            color: "red",
+                                            //size: "huge"
+                                        }
+                                    },
+                                    "precision": 2,
+                                    "inputs": {}
+                                },
+                                "styles": {
+                                    "plot_0": {
+                                        "title": "Sells",
+                                        "histogramBase": 0
+                                    }
+                                },
+                                "inputs": []
+                            },
+
+                            constructor: function () {
+                                this.init = function (context, inputCallback) {
+                                    this._context = context;
+                                    this._input = inputCallback;
+                                    var info = widget.symbolInterval();
+                                    var symbol = 'trades__sells__' + info.symbol;
+                                    this._context.new_sym(symbol, PineJS.Std.period(this._context), PineJS.Std.period(this._context));
+                                };
+
+                                this.main = function (context, inputCallback) {
+                                    this._context = context;
+                                    this._input = inputCallback;
+                                    this._context.select_sym(1);
+                                    var v = PineJS.Std.close(this._context);
+                                    return [v];
+                                }
+                            }
+                        }
+
+                    ]);
+                }
+            });
+
+            widget.onChartReady(function () {
+                widget.chart().createStudy('Buys', false, true);
+                widget.chart().createStudy('Sells', false, true);
             });
         };
-			
+
         window.addEventListener('DOMContentLoaded', initOnReady, false);
     </script>
 

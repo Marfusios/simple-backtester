@@ -54,6 +54,7 @@ namespace SimpleBacktester
             if(!config.RunWebVisualization)
                 return;
 
+            MyTvProvider.DisplayMarks = config.WebVisualizationDisplayMarks;
             OpenBrowser("https://localhost:5001");
             CreateVisualizationWebApp(args).Build().Run();
         }
@@ -320,8 +321,10 @@ namespace SimpleBacktester
             var numbers = Regex.Split(backtest.FilePattern, @"\D+");
             var symbol = $"{backtest.BaseSymbol}/{backtest.QuoteSymbol}{string.Join('-', numbers)}_{maxInv}";
             var ticker = $"{backtest.FilePattern}_{maxInv}";
+            var tickerBuysTrades = $"trades__buys__{symbol}";
+            var tickerSellsTrades = $"trades__sells__{symbol}";
 
-            var sym = new TvSymbolInfo()
+            var sym = new MyTvProvider.TvSymbolInfoClone()
             {
                 Name = symbol,
                 Ticker = ticker,
@@ -348,6 +351,9 @@ namespace SimpleBacktester
             };
             MyTvProvider.Symbols.Add(sym);
 
+            if (string.IsNullOrWhiteSpace(MyTvProvider.DefaultSymbol))
+                MyTvProvider.DefaultSymbol = symbol;
+
             var bars = computer.Bars;
             var convertedBars = bars
                 .Select(x => new TvBar()
@@ -370,13 +376,38 @@ namespace SimpleBacktester
                     Color = x.Amount >= 0 ? "blue" : "orange",
                     Label = x.Amount >= 0 ? "B" : "S",
                     LabelFontColor = "black",
-                    MinSize = 7,
-                    Text = $"{x.BarIndex} {(x.Amount >= 0 ? "Buy" : "Sell")} {x.PositionState} " +
-                           $"amount: {x.Amount}, price: {x.Price}",
+                    MinSize = 10,
+                    Text = $"{x.BarIndex} {(x.Amount >= 0 ? "Buy" : "Sell")} {x.PositionState} \n" +
+                           $"amount: {x.Amount}, price: {x.Price} \n" +
+                           $"time: {x.TimestampDate:G}",
                     Timestamp = x.TimestampDate
                 })
                 .ToArray();
+
+            var buys = computer.Trades.Where(x => x.Amount > 0).ToArray();
+            var sells = computer.Trades.Where(x => x.Amount < 0).ToArray();
+            var tradeBuyBars = MergeBarsWithTrades(convertedBars, buys);
+            var tradeSellBars = MergeBarsWithTrades(convertedBars, sells);
             MyTvProvider.Marks[ticker] = marks;
+            MyTvProvider.Bars[tickerBuysTrades] = tradeBuyBars;
+            MyTvProvider.Bars[tickerSellsTrades] = tradeSellBars;
+        }
+
+        private static TvBar[] MergeBarsWithTrades(TvBar[] convertedBars, TradeModel[] trades)
+        {
+            return convertedBars
+                .Select(x =>
+                {
+                    var foundTrade = trades.FirstOrDefault(y => y.TimestampDate == x.Timestamp);
+                    if (foundTrade != null)
+                        return x;
+                    return new TvBar()
+                    {
+                        Timestamp = x.Timestamp,
+                        Close = 0
+                    };
+                })
+                .ToArray();
         }
 
         private static string GetPathToReportDir(BacktestConfig backtest)

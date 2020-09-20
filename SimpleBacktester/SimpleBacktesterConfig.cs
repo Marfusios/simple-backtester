@@ -9,5 +9,6 @@
         public BacktestConfig[] Backtests { get; set; }
 
         public bool RunWebVisualization { get; set; }
+        public bool WebVisualizationDisplayMarks { get; set; }
     }
 }

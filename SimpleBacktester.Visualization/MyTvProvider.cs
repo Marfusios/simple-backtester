@@ -9,11 +9,14 @@ namespace SimpleBacktester.Visualization
 {
     public class MyTvProvider : ITradingViewProvider
     {
-        public static readonly List<TvSymbolInfo> Symbols = new List<TvSymbolInfo>();
+        public static readonly List<TvSymbolInfoClone> Symbols = new List<TvSymbolInfoClone>();
         public static readonly Dictionary<string, TvBar[]> Bars =
             new Dictionary<string, TvBar[]>(StringComparer.OrdinalIgnoreCase);
         public static readonly Dictionary<string, TvMark[]> Marks =
             new Dictionary<string, TvMark[]>(StringComparer.OrdinalIgnoreCase);
+
+        public static string DefaultSymbol = string.Empty;
+        public static bool DisplayMarks = false;
 
         public Task<TvConfiguration> GetConfiguration()
         {
@@ -21,7 +24,7 @@ namespace SimpleBacktester.Visualization
             {
                 SupportedResolutions = new[] {"1S","30S","1","60","120","240","D","2D","3D","W","3W","M","6M"},
                 SupportGroupRequest = false,
-                SupportMarks = true,
+                SupportMarks = DisplayMarks,
                 SupportSearch = true,
                 SupportTimeScaleMarks = false
             };
@@ -33,14 +36,31 @@ namespace SimpleBacktester.Visualization
             await Task.Yield();
 
             var symbolSafe = (symbol ?? string.Empty);
+            var symbolSafeOrig = symbolSafe;
             if (symbolSafe.Contains(":"))
             {
                 var split = symbolSafe.Split(":");
                 symbolSafe = split.LastOrDefault() ?? symbolSafe;
             }
 
-            return Symbols
-                .FirstOrDefault(x => x.Ticker.Equals(symbolSafe, StringComparison.OrdinalIgnoreCase));
+            // normalize trades symbol to use base one
+            symbolSafe = symbolSafe
+                .Replace("trades__buys__", string.Empty)
+                .Replace("trades__sells__", string.Empty);
+
+            var found = Symbols
+                .FirstOrDefault(x => x.Ticker.Equals(symbolSafe, StringComparison.OrdinalIgnoreCase) ||
+                                     x.Name.Equals(symbolSafe, StringComparison.OrdinalIgnoreCase));
+
+            if (found != null && symbolSafeOrig.Contains("trades__"))
+            {
+                var foundClone = found.Clone();
+                foundClone.Name = symbolSafeOrig;
+                foundClone.Ticker = symbolSafeOrig;
+                return foundClone;
+            }
+
+            return found;
         }
 
         public Task<TvSymbolSearch[]> FindSymbols(string query, string type, string exchange, int? limit)
@@ -132,6 +152,13 @@ namespace SimpleBacktester.Visualization
         }
 
 
+        public class TvSymbolInfoClone : TvSymbolInfo
+        {
+            public TvSymbolInfoClone Clone()
+            {
+                return MemberwiseClone() as TvSymbolInfoClone;
+            }
+        }
        
     }
 }
