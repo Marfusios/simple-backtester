@@ -28,7 +28,9 @@ A very simple backtesting application for OHLC data (range bars)
 
 #### Data as CSV files
 * minimal required columns: 
-    * `timestamp` - unix seconds or milliseconds
+    * date and time, one of: 
+        * `timestamp_unix` - unix seconds or milliseconds
+        * `date` or `timestamp` - human readable string parsed via `DateTime.Parse()`
     * `mid` or `close` - last price
 * additional columns (nice-to-have):
     * `bid` - last bid/buy price
