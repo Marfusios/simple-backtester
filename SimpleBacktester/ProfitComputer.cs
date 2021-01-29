@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using SimpleBacktester.Data;
 using SimpleBacktester.Strategies;
 using Action = SimpleBacktester.Strategies.Action;
@@ -75,7 +77,7 @@ namespace SimpleBacktester
 
                     var trade = new TradeModel()
                     {
-                        Timestamp = bar.Timestamp,
+                        Timestamp = bar.TimestampUnix,
                         Price = bar.Ask ?? bar.CurrentPrice,
                         Amount = orderSize,
                         BarIndex = _bars.Count,
@@ -109,7 +111,7 @@ namespace SimpleBacktester
                     
                     var trade = new TradeModel()
                     {
-                        Timestamp = bar.Timestamp,
+                        Timestamp = bar.TimestampUnix,
                         Price = bar.Bid ?? bar.CurrentPrice,
                         Amount = orderSize * (-1),
                         BarIndex = _bars.Count,
@@ -132,7 +134,7 @@ namespace SimpleBacktester
                 // sell trade
                 var trade = new TradeModel()
                 {
-                    Timestamp = bar.Timestamp,
+                    Timestamp = bar.TimestampUnix,
                     Price = bar.Bid ?? bar.CurrentPrice,
                     Amount = Math.Abs(_currentInventory * _orderSize) * (-1),
                     BarIndex = _bars.Count,
@@ -146,7 +148,7 @@ namespace SimpleBacktester
                 // buy trade
                 var trade = new TradeModel()
                 {
-                    Timestamp = bar.Timestamp,
+                    Timestamp = bar.TimestampUnix,
                     Price = bar.Ask ?? bar.CurrentPrice,
                     Amount = Math.Abs(_currentInventory * _orderSize),
                     BarIndex = _bars.Count,
@@ -155,6 +157,8 @@ namespace SimpleBacktester
                 };
                 _trades.Add(trade);
             }
+
+            //MakeAnalysis();
         }
 
         public ProfitInfo GetReport()
@@ -348,9 +352,164 @@ namespace SimpleBacktester
 
         private void LogTrade(TradeModel trade)
         {
-            var side = trade.Amount < 0 ? "SELL" : "BUY";
-
+            //var side = trade.Amount < 0 ? "SELL" : "BUY";
             //Console.WriteLine();
+        }
+
+        private void MakeAnalysis()
+        {
+            var totalBars = _bars.ToArray();
+
+            var groupedPerDay = totalBars
+                .GroupBy(x => x.TimestampDate.Date)
+                .ToArray();
+            var groupedPerMonth = totalBars
+                .GroupBy(x => new DateTime(x.TimestampDate.Year, x.TimestampDate.Month, 1))
+                .ToArray();
+            var groupedPerYear = totalBars
+                .GroupBy(x => new DateTime(x.TimestampDate.Year, 12, 1))
+                .ToArray();
+
+            var fileName = "C:\\dev\\data\\analysis\\range_bars.txt";
+            var builder = new StringBuilder();
+
+            builder.AppendLine("Range Bars ANALYSIS");
+            builder.AppendLine();
+            builder.AppendLine(
+                $"Bars: {totalBars.Length}, start: {totalBars.First().TimestampDate:D}, end: {totalBars.Last().TimestampDate:D}");
+            builder.AppendLine();
+
+            builder.AppendLine("YEARS");
+            AnalyzeGroup(groupedPerYear, builder);
+
+            builder.AppendLine();
+            builder.AppendLine("MONTHS");
+            AnalyzeGroup(groupedPerMonth, builder);
+
+            builder.AppendLine();
+            builder.AppendLine("DAYS");
+            AnalyzeGroup(groupedPerDay, builder);
+
+            File.WriteAllText(fileName, builder.ToString());
+        }
+
+        private void AnalyzeGroup(IGrouping<DateTime, RangeBarModel>[] grouped, StringBuilder builder)
+        {
+            foreach (var group in grouped)
+            {
+                var barsPerDay = @group
+                    .OrderBy(x => x.TimestampDate)
+                    .ToArray();
+
+                builder.Append($"{@group.Key:MM/dd/yyyy}  ");
+
+                var timeDiffMean = barsPerDay.Average(x => x.TimestampDiffMs) / 1000 / 60;
+                var timeDiffMedian = barsPerDay.Median(x => x.TimestampDiffMs) / 1000 / 60;
+
+                var uptickUptick = 0;
+                var uptickDowntick = 0;
+                var uptickTotal = 0;
+
+                var downtickUptick = 0;
+                var downtickDowntick = 0;
+                var downtickTotal = 0;
+
+                var uptickUptickUptick = 0;
+                var uptickUptickDowntick = 0;
+                var uptickDowntickUptick = 0;
+                var uptickDowntickDowntick = 0;
+
+                var downtickUptickUptick = 0;
+                var downtickUptickDowntick = 0;
+                var downtickDowntickUptick = 0;
+                var downtickDowntickDowntick = 0;
+                
+                var uuTotal = 0;
+                var udTotal = 0;
+                var duTotal = 0;
+                var ddTotal = 0;
+
+                for (int i = 0; i < barsPerDay.Length; i++)
+                {
+                    var current = barsPerDay[i];
+                    var previous = i > 0 ? barsPerDay[i - 1] : current;
+                    var prePrevious = i > 1 ? barsPerDay[i - 2] : previous;
+
+                    var currentChange = Math.Sign(current.MidChange ?? 0);
+                    var previousChange = Math.Sign(previous.MidChange ?? 0);
+                    var prePreviousChange = Math.Sign(prePrevious.MidChange ?? 0);
+
+                    if (previousChange > 0)
+                    {
+                        uptickTotal++;
+                        if (currentChange > 0) uptickUptick++;
+                        if (currentChange < 0) uptickDowntick++;
+
+                        if (prePreviousChange > 0)
+                        {
+                            uuTotal++;
+                            if (currentChange > 0) uptickUptickUptick++;
+                            if (currentChange < 0) uptickUptickDowntick++;
+                        }
+
+                        if (prePreviousChange < 0)
+                        {
+                            duTotal++;
+                            if (currentChange > 0) downtickUptickUptick++;
+                            if (currentChange < 0) downtickUptickDowntick++;
+                        }
+                    }
+
+                    if (previousChange < 0)
+                    {
+                        downtickTotal++;
+                        if (currentChange > 0) downtickUptick++;
+                        if (currentChange < 0) downtickDowntick++;
+
+                        if (prePreviousChange > 0)
+                        {
+                            udTotal++;
+                            if (currentChange > 0) uptickDowntickUptick++;
+                            if (currentChange < 0) uptickDowntickDowntick++;
+                        }
+
+                        if (prePreviousChange < 0)
+                        {
+                            ddTotal++;
+                            if (currentChange > 0) downtickDowntickUptick++;
+                            if (currentChange < 0) downtickDowntickDowntick++;
+                        }
+                    }
+                }
+
+                var totalChanged = uptickTotal + downtickTotal;
+                var total = barsPerDay.Length;
+
+                builder.Append($"bars: {total:0000} (price unchanged: {total - totalChanged}),  ");
+
+                builder.Append($"UU: {ComputePercentage(uptickTotal, uptickUptick):F}%, ");
+                builder.Append($"UD: {ComputePercentage(uptickTotal, uptickDowntick):F}%, ");
+                builder.Append($"DU: {ComputePercentage(downtickTotal, downtickUptick):F}%, ");
+                builder.Append($"DD: {ComputePercentage(downtickTotal, downtickDowntick):F}%   | ");
+
+                builder.Append($"UUU: {ComputePercentage(uuTotal, uptickUptickUptick):F}%, ");
+                builder.Append($"UUD: {ComputePercentage(uuTotal, uptickUptickDowntick):F}%, ");
+                builder.Append($"UDU: {ComputePercentage(udTotal, uptickDowntickUptick):F}%, ");
+                builder.Append($"UDD: {ComputePercentage(udTotal, uptickDowntickDowntick):F}%  ---  ");
+
+                builder.Append($"DUU: {ComputePercentage(duTotal, downtickUptickUptick):F}%, ");
+                builder.Append($"DUD: {ComputePercentage(duTotal, downtickUptickDowntick):F}%, ");
+                builder.Append($"DDU: {ComputePercentage(ddTotal, downtickDowntickUptick):F}%, ");
+                builder.Append($"DDD: {ComputePercentage(ddTotal, downtickDowntickDowntick):F}%   | ");
+
+                builder.Append($"time diff: {timeDiffMean:F} min (median: {timeDiffMedian:F} min)");
+                builder.AppendLine();
+            }
+        }
+
+        private double ComputePercentage(int total, int value)
+        {
+            return (value / (double)total) * 100;
         }
     }
 }

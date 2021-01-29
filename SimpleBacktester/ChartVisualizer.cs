@@ -61,8 +61,8 @@ namespace SimpleBacktester
             {
                 var price = prices[j];
 
-                priceTimestamp[j] = price.Timestamp;
-                priceX[j] = byTime ? price.Timestamp : j;
+                priceTimestamp[j] = price.TimestampUnix;
+                priceX[j] = byTime ? price.TimestampUnix : j;
                 priceY[j] = price.CurrentPrice;
             }
 
@@ -103,8 +103,8 @@ namespace SimpleBacktester
 
 
             // set axis limits
-            var xMin = byTime ? prices.First().Timestamp - 10000 : 0;
-            var xMax = byTime ? prices.Last().Timestamp + 10000 : prices.Length + 1;
+            var xMin = byTime ? prices.First().TimestampUnix - 10000 : 0;
+            var xMax = byTime ? prices.Last().TimestampUnix + 10000 : prices.Length + 1;
             var yMin = prices.Min(x => x.CurrentPrice);
             var yMax = prices.Max(x => x.CurrentPrice);
 

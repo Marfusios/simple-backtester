@@ -38,18 +38,31 @@ namespace SimpleBacktester
             var config = InitConfig(env);
             MergeBacktestsWithBase(config);
 
-            var strategyFactory = new Func<IStrategy>(() => ResolveStrategy(config.Strategy, config.StrategyParams));
-            var strategy = strategyFactory();
-
-            var paramsText = config.StrategyParams != null
-                ? $"params: [{string.Join(", ", config.StrategyParams)}]"
-                : string.Empty;
-            Console.WriteLine($"[STRATEGY] '{strategy.GetType().Name}'  {paramsText}");
-
-            foreach (var backtest in config.Backtests)
+            var counter = 0;
+            foreach (var strategyConfig in config.Strategies)
             {
-                RunBacktest(backtest, strategyFactory);
+                counter++;
+                var strategyFactory = new Func<IStrategy>(() => ResolveStrategy(strategyConfig.Strategy, strategyConfig.StrategyParams));
+                var strategy = strategyFactory();
+
+                var paramsText = strategyConfig.StrategyParams != null
+                    ? $"params: [{string.Join(", ", strategyConfig.StrategyParams)}]"
+                    : string.Empty;
+                Console.WriteLine($"[STRATEGY] #{counter} '{strategy.GetType().Name}'  {paramsText}");
+
+                foreach (var backtest in config.Backtests)
+                {
+                    RunBacktest(backtest, strategyFactory);
+                }
+
+                Console.WriteLine();
+                Console.WriteLine();
             }
+
+            var reportsDirectory = GetPathToReportDir(config.Base);
+            Console.WriteLine();
+            Console.WriteLine($"[RESULT] Reports saved to =============>  '{reportsDirectory}'");
+            Console.WriteLine();
 
             if(!config.RunWebVisualization)
                 return;
@@ -97,6 +110,8 @@ namespace SimpleBacktester
 
                 backtest.SkipFiles ??= config.Base.SkipFiles;
                 backtest.LimitFiles ??= config.Base.LimitFiles;
+
+                backtest.RunWebVisualization ??= config.RunWebVisualization;
             }
         }
 
@@ -239,7 +254,7 @@ namespace SimpleBacktester
 
             foreach (var bar in bars)
             {
-                var t = bar.Timestamp;
+                var t = bar.TimestampUnix;
                 var d = config.TimestampDecimals ?? 0;
                 var converted = t;
 
@@ -251,7 +266,7 @@ namespace SimpleBacktester
                         break;
                 }
 
-                bar.Timestamp = converted;
+                bar.TimestampUnix = converted;
             }
         }
 
@@ -270,7 +285,8 @@ namespace SimpleBacktester
             var strategyName = strategy.GetType().Name;
             var pattern = ExtractFromPattern(backtest);
             pattern = string.IsNullOrWhiteSpace(pattern) ? filename : pattern;
-            var targetFile = Path.Combine(GetPathToReportDir(backtest), $"{pattern}__{strategyName}.txt");
+            var directoryPath = GetPathToReportDir(backtest);
+            var targetFile = Path.Combine(directoryPath, $"{pattern}__{strategyName}.txt");
             File.WriteAllText(targetFile, report);
         }
 
@@ -318,6 +334,9 @@ namespace SimpleBacktester
         private static void PrepareWebVisualization(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy, in int maxInv, 
             ProfitInfo report, ProfitInfo profitInfo, ProfitInfo[] days, ProfitInfo[] months)
         {
+            if (!backtest.RunWebVisualization ?? false)
+                return;
+
             var numbers = Regex.Split(backtest.FilePattern, @"\D+");
             var symbol = $"{backtest.BaseSymbol}/{backtest.QuoteSymbol}{string.Join('-', numbers)}_{maxInv}";
             var ticker = $"{backtest.FilePattern}_{maxInv}";
@@ -412,7 +431,7 @@ namespace SimpleBacktester
 
         private static string GetPathToReportDir(BacktestConfig backtest)
         {
-            return Path.Combine(Path.GetDirectoryName(backtest.DirectoryPath), "reports");
+            return Path.Combine(Path.GetDirectoryName(backtest.DirectoryPath ?? string.Empty) ?? string.Empty, "reports");
         }
 
         private static string ExtractFromPattern(BacktestConfig backtest)
@@ -434,6 +453,7 @@ namespace SimpleBacktester
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.UseContentRoot("../../../../SimpleBacktester.Visualization");
                     webBuilder.UseStartup<Startup>();
                 });
 

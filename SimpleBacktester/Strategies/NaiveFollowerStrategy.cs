@@ -21,10 +21,10 @@ namespace SimpleBacktester.Strategies
                 return Action.Nothing;
             }
 
-            var previousMidChange = _lastMidChange;
+            //var previousMidChange = _lastMidChange;
             _lastMidChange = bar.CurrentPrice - _lastBar.CurrentPrice;
 
-            var lastUp = previousMidChange >= 0;
+            var lastUp = _lastMidChange >= 0;
             _lastBar = bar;
 
             if(_againstTrend)

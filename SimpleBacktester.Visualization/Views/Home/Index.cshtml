@@ -27,7 +27,8 @@
                 debug: true, // uncomment this line to see Library errors and warnings in the console
                 fullscreen: true,
                 symbol: '@MyTvProvider.DefaultSymbol',
-                interval: '1D',
+                interval: '1',
+                //interval: '1D',
                 container_id: "tv_chart_container",
 
                 // BEWARE: no trailing slash is expected in feed URL
@@ -163,10 +164,10 @@
                 }
             });
 
-            widget.onChartReady(function () {
-                widget.chart().createStudy('Buys', false, true);
-                widget.chart().createStudy('Sells', false, true);
-            });
+            //widget.onChartReady(function () {
+            //    widget.chart().createStudy('Buys', false, true);
+            //    widget.chart().createStudy('Sells', false, true);
+            //});
         };
 
         window.addEventListener('DOMContentLoaded', initOnReady, false);

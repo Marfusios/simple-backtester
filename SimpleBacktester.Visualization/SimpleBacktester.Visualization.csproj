@@ -10,6 +10,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\datafeeds\udf\lib\**" />
+    <Compile Remove="wwwroot\datafeeds\udf\src\**" />
+    <Content Remove="wwwroot\datafeeds\udf\lib\**" />
+    <Content Remove="wwwroot\datafeeds\udf\src\**" />
+    <EmbeddedResource Remove="wwwroot\datafeeds\udf\lib\**" />
+    <EmbeddedResource Remove="wwwroot\datafeeds\udf\src\**" />
+    <None Remove="wwwroot\datafeeds\udf\lib\**" />
+    <None Remove="wwwroot\datafeeds\udf\src\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\datafeeds\udf\.npmrc" />
+    <Content Remove="wwwroot\datafeeds\udf\package.json" />
+    <Content Remove="wwwroot\datafeeds\udf\README.md" />
+    <Content Remove="wwwroot\datafeeds\udf\rollup.config.js" />
+    <Content Remove="wwwroot\datafeeds\udf\tsconfig.json" />
+  </ItemGroup>
+
+
+  <!--<ItemGroup>
     <Compile Remove="wwwroot\charting_library\**" />
     <Compile Remove="wwwroot\datafeeds\**" />
     <Content Remove="wwwroot\charting_library\**" />
@@ -18,7 +38,7 @@
     <EmbeddedResource Remove="wwwroot\datafeeds\**" />
     <None Remove="wwwroot\charting_library\**" />
     <None Remove="wwwroot\datafeeds\**" />
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.0" />

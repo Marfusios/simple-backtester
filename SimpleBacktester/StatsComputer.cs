@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SimpleBacktester
@@ -79,6 +80,7 @@ namespace SimpleBacktester
                 TotalSoldQuote = totalAskQuote,
                 AverageBuyPrice = ComputeAveragePrice(bids),
                 AverageSellPrice = ComputeAveragePrice(asks),
+                WinRate = ComputeWinRate(executedOrders),
                 ExcessAmount = excessAmount
             };
 
@@ -139,6 +141,39 @@ namespace SimpleBacktester
             result.PnlNoExcess = ComputeProfitNoExcess(executedOrders, fee);
             result.Pnl = totalDiff;
             return result;
+        }
+
+        private static double ComputeWinRate(TradeModel[] executedOrders)
+        {
+            var orders = executedOrders.OrderBy(x => x.Timestamp).ToArray();
+            var totalPositions = 0.0;
+            var winPositions = 0.0;
+
+            var stack = new Stack<TradeModel>();
+
+            foreach (var currentOrder in orders)
+            {
+                if (currentOrder.PositionState == PositionState.Close)
+                {
+                    var count = stack.Count;
+                    totalPositions += count;
+
+                    foreach (var previousOrder in stack)
+                    {
+                        var isBuy = previousOrder.Amount >= 0;
+                        var isWin = isBuy ? previousOrder.Price < currentOrder.Price : previousOrder.Price > currentOrder.Price;
+                        winPositions += isWin ? 1 : 0;
+                    }
+
+                    stack.Clear();
+                    continue;
+                }
+
+                stack.Push(currentOrder);
+            }
+
+            var winRate = winPositions / totalPositions;
+            return winRate;
         }
 
         public static double ComputeAveragePrice(TradeModel[] orders)

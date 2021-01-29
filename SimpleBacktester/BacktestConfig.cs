@@ -22,5 +22,7 @@
 
         public int? LimitFiles { get; set; }
         public int? SkipFiles { get; set; }
+
+        public bool? RunWebVisualization { get; set; }
     }
 }

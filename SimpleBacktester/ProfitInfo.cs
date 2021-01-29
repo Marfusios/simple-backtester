@@ -45,11 +45,14 @@ namespace SimpleBacktester
 
         public int? Day { get; set; }
 
+        public double WinRate { get; set; }
+
         public override string ToString()
         {
             var feeString = DisplayWithFee ? $"(with fee: {PnlWithFee:#.00} {QuoteSymbol})" : string.Empty;
             return $"trades {TradesCount,5} " +
                    $"(b: {BuysCount,5}/{AverageBuyPrice,8:#.00} {QuoteSymbol}, s: {SellsCount,5}/{AverageSellPrice,8:#.00} {QuoteSymbol}), " +
+                   $"Win: {(WinRate*100):#.00}%, " +
                    $"Inv: {CurrentInventory * OrderSize} {BaseSymbol} (max: {MaxInventory * OrderSize}/{MaxInventoryLimit * OrderSize} {BaseSymbol}), " +
                    $"Pnl: {Pnl,10:#.00} {QuoteSymbol} {feeString}";
         }
@@ -81,7 +84,8 @@ namespace SimpleBacktester
                 TotalBought = TotalBought,
                 TotalSold = TotalSold,
                 TotalBoughtQuote = TotalBoughtQuote,
-                TotalSoldQuote = TotalSoldQuote
+                TotalSoldQuote = TotalSoldQuote,
+                WinRate = WinRate
             };
         }
 
