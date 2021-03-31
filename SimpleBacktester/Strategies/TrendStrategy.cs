@@ -3,7 +3,7 @@ using SimpleBacktester.Data;
 
 namespace SimpleBacktester.Strategies
 {
-    public class TrendStrategy : IStrategy
+    public class TrendStrategy : ITakerStrategy
     {
         private readonly bool _aggressive;
         private readonly int _trendBreak; 

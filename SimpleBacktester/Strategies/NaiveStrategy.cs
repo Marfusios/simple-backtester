@@ -2,7 +2,7 @@
 
 namespace SimpleBacktester.Strategies
 {
-    public class NaiveStrategy : IStrategy
+    public class NaiveStrategy : ITakerStrategy
     {
         private bool _lastSell = true;
 

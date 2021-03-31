@@ -2,7 +2,7 @@
 
 namespace SimpleBacktester.Strategies
 {
-    public class StairsStrategy : IStrategy
+    public class StairsStrategy : ITakerStrategy
     {
         private readonly bool _preserverLastBar;
         

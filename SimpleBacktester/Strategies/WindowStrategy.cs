@@ -5,7 +5,7 @@ using SimpleBacktester.Data;
 
 namespace SimpleBacktester.Strategies
 {
-    public class WindowStrategy : IStrategy
+    public class WindowStrategy : ITakerStrategy
     {
         private readonly int _window;
         private readonly int _shortWindow;
@@ -115,21 +115,33 @@ namespace SimpleBacktester.Strategies
             //    //return Action.Nothing;
             //}
 
-            if (currentBuyValueNorm >= maxMid && fractalBuy > _fractalLimit)
+            //if (currentBuyValueNorm >= maxMid && fractalBuy > _fractalLimit)
+            //{
+            //    // entry
+            //    _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
+            //    _currentPositionExitTimeSpan = 0;
+            //    return Action.Buy;
+            //}
+
+            //var sellCross = sellIsMin ? currentSellValueNorm <= minMid : currentSellValueNorm >= minMid;
+            //if (sellCross && fractalSell > _fractalLimit)
+            //{
+            //    // entry
+            //    _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
+            //    _currentPositionExitTimeSpan = 0;
+            //    return Action.Sell;
+            //}
+
+            if (currentBuyValue >= maxMid)
             {
-                // entry
-                _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
-                _currentPositionExitTimeSpan = 0;
-                return Action.Buy;
+                _bars.Clear();
+                return Action.Sell;
             }
 
-            var sellCross = sellIsMin ? currentSellValueNorm <= minMid : currentSellValueNorm >= minMid;
-            if (sellCross && fractalSell > _fractalLimit)
+            if (currentSellValue <= minMid)
             {
-                // entry
-                _currentPositionEntryTimeSpan = shortBars.Sum(x => x.TimestampDiffMs);
-                _currentPositionExitTimeSpan = 0;
-                return Action.Sell;
+                _bars.Clear();
+                return Action.Buy;
             }
 
             return Action.Nothing;

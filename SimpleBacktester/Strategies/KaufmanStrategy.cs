@@ -2,7 +2,7 @@
 
 namespace SimpleBacktester.Strategies
 {
-    public class KaufmanStrategy : IStrategy
+    public class KaufmanStrategy : ITakerStrategy
     {
         private readonly bool _largerPosition;
 

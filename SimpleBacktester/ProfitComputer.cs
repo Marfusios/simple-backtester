@@ -23,8 +23,11 @@ namespace SimpleBacktester
         private readonly List<TradeModel> _trades = new List<TradeModel>();
         private readonly List<RangeBarModel> _bars = new List<RangeBarModel>();
 
+        private double _currentInventoryAbs;
         private int _currentInventory;
         private int _maxInventory;
+
+        private List<PlacedOrder> _placedOrders = new List<PlacedOrder>();
 
         public ProfitComputer(IStrategy strategy, BacktestConfig config, int? maxLimitInventory)
         {
@@ -40,6 +43,8 @@ namespace SimpleBacktester
         public TradeModel[] Trades => _trades.ToArray();
         public RangeBarModel[] Bars => _bars.ToArray();
 
+        public double InitialPrice => _bars.FirstOrDefault()?.CurrentPrice ?? 0;
+
         public void ProcessBars(RangeBarModel[] bars)
         {
             foreach (var bar in bars)
@@ -47,82 +52,207 @@ namespace SimpleBacktester
                 bar.Index = _bars.Count;
                 _bars.Add(bar);
 
-                var invAbs = _currentInventory * _orderSize;
-                var decision = _strategy.Decide(bar, invAbs);
-                if(decision == Action.Nothing)
-                    continue;
-
-                var orderSize = _orderSize;
-                var positionState = PositionState.Open;
-
-                if (decision == Action.Buy)
-                {
-                    if (_currentInventory < 0)
-                    {
-                        orderSize = Math.Abs(_currentInventory) * orderSize;
-                        _currentInventory = 0;
-                        positionState = PositionState.Close;
-                    }
-                    else
-                    {
-                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
-                        {
-                            // inventory reached, do nothing
-                            continue;
-                        }
-                        if (_currentInventory > 0)
-                            positionState = PositionState.Increase;
-                        _currentInventory++;
-                    }
-
-                    var trade = new TradeModel()
-                    {
-                        Timestamp = bar.TimestampUnix,
-                        Price = bar.Ask ?? bar.CurrentPrice,
-                        Amount = orderSize,
-                        BarIndex = _bars.Count,
-                        CurrentInventory = _currentInventory,
-                        PositionState = positionState
-                    };
-                    _trades.Add(trade);
-                    LogTrade(trade);
-                }
-
-                if (decision == Action.Sell)
-                {
-                    if (_currentInventory > 0)
-                    {
-                        orderSize = _currentInventory * orderSize;
-                        _currentInventory = 0;
-                        positionState = PositionState.Close;
-                    }
-                    else
-                    {
-                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
-                        {
-                            // inventory reached, do nothing
-                            continue;
-                        }
-                        if (_currentInventory < 0)
-                            positionState = PositionState.Increase;
-                        _currentInventory--;
-                    }
-
-                    
-                    var trade = new TradeModel()
-                    {
-                        Timestamp = bar.TimestampUnix,
-                        Price = bar.Bid ?? bar.CurrentPrice,
-                        Amount = orderSize * (-1),
-                        BarIndex = _bars.Count,
-                        CurrentInventory = _currentInventory,
-                        PositionState = positionState
-                    };
-                    _trades.Add(trade);
-                    LogTrade(trade);
-                }
+                ExecuteTakerStrategy(_strategy as ITakerStrategy, bar, _orderSize);
+                ExecuteMakerStrategy(_strategy as IMakerStrategy, bar);
 
                 _maxInventory = Math.Max(_maxInventory, Math.Abs(_currentInventory));
+            }
+        }
+
+        private bool ExecuteTakerStrategy(ITakerStrategy strategy, RangeBarModel bar, double orderSize)
+        {
+            if (strategy == null)
+                return false;
+
+            var decision = strategy.Decide(bar, _currentInventoryAbs);
+            if (decision == Action.Nothing)
+                return true;
+
+            var positionState = PositionState.Open;
+
+            if (decision == Action.Buy)
+            {
+                if (_currentInventory < 0)
+                {
+                    orderSize = Math.Abs(_currentInventory) * orderSize;
+                    _currentInventory = 0;
+                    positionState = PositionState.Close;
+                }
+                else
+                {
+                    if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                    {
+                        // inventory reached, do nothing
+                        return true;
+                    }
+
+                    if (_currentInventory > 0)
+                        positionState = PositionState.Increase;
+                    _currentInventory++;
+                }
+
+                _currentInventoryAbs += orderSize;
+                var trade = new TradeModel()
+                {
+                    Timestamp = bar.TimestampUnix,
+                    Price = bar.Ask ?? bar.CurrentPrice,
+                    Amount = orderSize,
+                    BarIndex = _bars.Count,
+                    CurrentInventory = _currentInventory,
+                    PositionState = positionState
+                };
+                _trades.Add(trade);
+                LogTrade(trade);
+            }
+
+            if (decision == Action.Sell)
+            {
+                if (_currentInventory > 0)
+                {
+                    orderSize = _currentInventory * orderSize;
+                    _currentInventory = 0;
+                    positionState = PositionState.Close;
+                }
+                else
+                {
+                    if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                    {
+                        // inventory reached, do nothing
+                        return true;
+                    }
+
+                    if (_currentInventory < 0)
+                        positionState = PositionState.Increase;
+                    _currentInventory--;
+                }
+
+                _currentInventoryAbs -= orderSize;
+                var trade = new TradeModel()
+                {
+                    Timestamp = bar.TimestampUnix,
+                    Price = bar.Bid ?? bar.CurrentPrice,
+                    Amount = orderSize * (-1),
+                    BarIndex = _bars.Count,
+                    CurrentInventory = _currentInventory,
+                    PositionState = positionState
+                };
+                _trades.Add(trade);
+                LogTrade(trade);
+            }
+
+            return false;
+        }
+
+        private bool ExecuteMakerStrategy(IMakerStrategy strategy, RangeBarModel bar)
+        {
+            if (strategy == null)
+                return false;
+
+            EvaluatePreviousOrders(bar);
+
+            var newPlacedOrders = strategy.Decide(bar, _currentInventoryAbs, _placedOrders.ToArray());
+            
+            _placedOrders.Clear();
+            _placedOrders.AddRange(newPlacedOrders);
+
+            return false;
+        }
+
+        private void EvaluatePreviousOrders(RangeBarModel bar)
+        {
+            if (_placedOrders.Count <= 0)
+                return;
+
+            var highPrice = bar.HighBuy ?? bar.High;
+            var lowPrice = bar.LowSell ?? bar.Low;
+
+            foreach (var placedOrder in _placedOrders.ToArray())
+            {
+                var orderPrice = placedOrder.Price;
+                var orderAmount = placedOrder.Amount;
+                var positionState = PositionState.Open;
+
+                if (placedOrder.Side == OrderSide.Bid)
+                {
+                    if (_currentInventoryAbs < -1e-6)
+                    {
+                        positionState = PositionState.Close;
+                    }
+                    else
+                    {
+                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                        {
+                            // inventory reached, do nothing
+                            _placedOrders.Remove(placedOrder);
+                            continue;
+                        }
+
+                        if (_currentInventoryAbs > 1e-6)
+                            positionState = PositionState.Increase;
+                    }
+
+                    if (lowPrice == null || lowPrice > orderPrice)
+                    {
+                        // no BUY trade, price was too high
+                        continue;
+                    }
+
+                    _currentInventory++;
+                    _currentInventoryAbs += orderAmount;
+                    var trade = new TradeModel
+                    {
+                        Timestamp = bar.TimestampUnix,
+                        Price = orderPrice,
+                        Amount = orderAmount,
+                        BarIndex = _bars.Count,
+                        CurrentInventory = _currentInventory,
+                        PositionState = positionState
+                    };
+                    _trades.Add(trade);
+                    LogTrade(trade);
+                    _placedOrders.Remove(placedOrder);
+                }
+                else
+                {
+                    if (_currentInventoryAbs > 1e-6)
+                    {
+                        positionState = PositionState.Close;
+                    }
+                    else
+                    {
+                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                        {
+                            // inventory reached, do nothing
+                            _placedOrders.Remove(placedOrder);
+                            continue;
+                        }
+
+                        if (_currentInventoryAbs < -1e-6)
+                            positionState = PositionState.Increase;
+                        
+                    }
+
+                    if (highPrice == null || highPrice < orderPrice)
+                    {
+                        // no SELL trade, price was too low
+                        continue;
+                    }
+
+                    _currentInventory--;
+                    _currentInventoryAbs -= orderAmount;
+                    var trade = new TradeModel()
+                    {
+                        Timestamp = bar.TimestampUnix,
+                        Price = orderPrice,
+                        Amount = orderAmount * (-1),
+                        BarIndex = _bars.Count,
+                        CurrentInventory = _currentInventory,
+                        PositionState = positionState
+                    };
+                    _trades.Add(trade);
+                    LogTrade(trade);
+                    _placedOrders.Remove(placedOrder);
+                }
             }
         }
 
@@ -199,7 +329,7 @@ namespace SimpleBacktester
             return reports.ToArray();
         }
 
-        public ProfitInfo[] GetReportPerDays(int year, int month)
+        public ProfitInfo[] GetReportPerDays(int year, int month, ref double maxTotalPnl, ref double minTotalPnl, ref double totalPnl)
         {
             var grouped = _trades
                 .Where(x => x.TimestampDate.Year == year && x.TimestampDate.Month == month)
@@ -223,16 +353,10 @@ namespace SimpleBacktester
                 if (dayReport == ProfitInfo.Empty)
                     continue;
 
-                var formatted = $"day:   {group.Key:00}, {dayReport}";
-                dayReport.Report = formatted;
-                dayReport.Day = group.Key;
-                dayReport.Year = year;
-                dayReport.Month = month;
-                reports.Add(dayReport);
-
                 if (total == null)
                 {
                     total = dayReport.Clone();
+                    total.Pnl += totalPnl;
                     total.AverageBuyPrice = 0;
                     total.AverageSellPrice = 0;
                 }
@@ -249,6 +373,37 @@ namespace SimpleBacktester
                     total.PnlNoExcess += dayReport.PnlNoExcess;
                     total.PnlWithFee += dayReport.PnlWithFee;
                 }
+
+                var previousMaxPnl = maxTotalPnl;
+                maxTotalPnl = Math.Max(maxTotalPnl, total.Pnl);
+
+                if (maxTotalPnl > previousMaxPnl)
+                {
+                    minTotalPnl = maxTotalPnl;
+                }
+
+                minTotalPnl = Math.Min(minTotalPnl, total.Pnl);
+
+                var drawdown = (minTotalPnl - maxTotalPnl) / maxTotalPnl;
+                if (drawdown < 0)
+                    dayReport.MaxDrawdownPercentage = drawdown;
+
+                if (totalPnl <= 0)
+                {
+                    totalPnl = total.Pnl;
+                }
+                else
+                {
+                    dayReport.ProfitPercentage = (total.Pnl - totalPnl) / totalPnl;
+                    totalPnl = total.Pnl;
+                }
+
+                var formatted = $"day:   {group.Key:00}, {dayReport}";
+                dayReport.Report = formatted;
+                dayReport.Day = group.Key;
+                dayReport.Year = year;
+                dayReport.Month = month;
+                reports.Add(dayReport);
             }
 
             //if (total != null)
@@ -260,41 +415,6 @@ namespace SimpleBacktester
             //}
 
             return reports.ToArray();
-        }
-
-        public ProfitInfo GetTotalReport(ProfitInfo[] profits)
-        {
-            var total = new ProfitInfo();
-
-            foreach (var profit in profits)
-            {
-                total.TradesCount += profit.TradesCount;
-                total.BuysCount += profit.BuysCount;
-                total.SellsCount += profit.SellsCount;
-                total.TotalBought += profit.TotalBought;
-                total.TotalSold += profit.TotalSold;
-                total.TotalBoughtQuote += profit.TotalBoughtQuote;
-                total.TotalSoldQuote += profit.TotalSoldQuote;
-                total.Pnl += profit.Pnl;
-                total.PnlNoExcess += profit.PnlNoExcess;
-                total.PnlWithFee += profit.PnlWithFee;
-                total.DisplayWithFee = profit.DisplayWithFee;
-                total.QuoteSymbol = profit.QuoteSymbol;
-                total.BaseSymbol = profit.BaseSymbol;
-                total.MaxInventory = profit.MaxInventory;
-                total.MaxInventoryLimit = profit.MaxInventoryLimit;
-                total.OrderSize = profit.OrderSize;
-            }
-
-            total.AverageBuyPrice = total.TotalBoughtQuote / total.TotalBought;
-            total.AverageSellPrice = total.TotalSoldQuote / total.TotalSold;
-
-            var formattedTotal = $"{total} with excess";
-            total.Report = formattedTotal;
-            total.Day = null;
-            total.Month = null;
-            total.Year = null;
-            return total;
         }
 
         private ProfitInfo GetReport(TradeModel[] trades, TradeModel[] nextTrades)

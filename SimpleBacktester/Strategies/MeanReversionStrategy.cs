@@ -3,7 +3,7 @@ using SimpleBacktester.Data;
 
 namespace SimpleBacktester.Strategies
 {
-    public class MeanReversionStrategy : IStrategy
+    public class MeanReversionStrategy : ITakerStrategy
     {
         private readonly int _trendConfirmationCount;
 

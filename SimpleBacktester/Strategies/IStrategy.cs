@@ -1,4 +1,5 @@
-﻿using SimpleBacktester.Data;
+﻿using System;
+using SimpleBacktester.Data;
 
 namespace SimpleBacktester.Strategies
 {
@@ -9,8 +10,38 @@ namespace SimpleBacktester.Strategies
         Sell
     }
 
+    public enum OrderSide
+    {
+        Bid,
+        Ask
+    }
+
+    public class PlacedOrder
+    {
+        public PlacedOrder(OrderSide side, double price, double amount)
+        {
+            Side = side;
+            Price = Math.Abs(price);
+            Amount = Math.Abs(amount);
+        }
+
+        public OrderSide Side { get; }
+        public double Price { get; }
+        public double Amount { get; }
+    }
+
     public interface IStrategy
     {
+
+    }
+
+    public interface ITakerStrategy : IStrategy
+    {
         Action Decide(RangeBarModel bar, double inventoryAbsolute);
+    }
+
+    public interface IMakerStrategy : IStrategy
+    {
+        PlacedOrder[] Decide(RangeBarModel bar, double inventoryAbsolute, PlacedOrder[] placedOrders);
     }
 }

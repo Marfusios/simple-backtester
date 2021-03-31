@@ -22,7 +22,7 @@ namespace SimpleBacktester.Visualization
         {
             var config = new TvConfiguration
             {
-                SupportedResolutions = new[] {"1S","30S","1","60","120","240","D","2D","3D","W","3W","M","6M"},
+                SupportedResolutions = new[] {"1S","15S","30S","1","5","60","120","240","D","2D","3D","W","3W","M","6M"},
                 SupportGroupRequest = false,
                 SupportMarks = DisplayMarks,
                 SupportSearch = true,

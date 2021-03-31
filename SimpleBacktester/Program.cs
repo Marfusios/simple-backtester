@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -183,29 +184,63 @@ namespace SimpleBacktester
                 if (lastBar != null)
                     computer.ProcessLastBar(lastBar);
 
-                var report = computer.GetReport();
+                var primaryReport = computer.GetReport();
 
-                builderTop.AppendLine(report.ToString());
+                var perMonth = computer.GetReportByMonth();
+                var reportDays = new List<ProfitInfo>();
+                var maxTotalPnl = maxInventory * computer.InitialPrice;
+                var minTotalPnl = maxTotalPnl;
+                var totalPnl = maxTotalPnl;
+
+                foreach (var month in perMonth)
+                {
+                    if (month.Month == null)
+                    {
+                        continue;
+                    }
+
+                    var perDay = computer.GetReportPerDays(month.Year.Value, month.Month.Value, ref maxTotalPnl, ref minTotalPnl, ref totalPnl);
+                    reportDays.AddRange(perDay.Where(x => x.Day != null));
+                    month.MaxDrawdownPercentage = perDay.Min(x => x.MaxDrawdownPercentage);
+                    month.SubProfits = perDay;
+                }
+
+                primaryReport.MaxDrawdownPercentage = perMonth.Min(x => x.MaxDrawdownPercentage);
+
+                builderTop.AppendLine(primaryReport.ToString());
 
                 builder.AppendLine(
                     $"==== MAX INV: {maxInventory} {new string('=', 133)}");
                 builder.AppendLine();
-                builder.AppendLine(report.ToString());
-                Console.WriteLine($"    {report}");
+                builder.AppendLine(primaryReport.ToString());
 
-                var reportDays = new List<ProfitInfo>();
-                var perMonth = computer.GetReportByMonth();
+                var consoleDefaultColor = Console.ForegroundColor;
+                var reportColor = Console.ForegroundColor;
+
+                var pnl = backtest.DisplayFee != null && backtest.DisplayFee.Value ? primaryReport.PnlWithFee : primaryReport.Pnl;
+
+                if (pnl < 0)
+                    reportColor = ConsoleColor.DarkRed;
+                else if (pnl > 0 && primaryReport.MaxDrawdownPercentage >= -0.03)
+                    reportColor = ConsoleColor.Green;
+                else if (pnl > 0)
+                    reportColor = ConsoleColor.DarkGreen;
+
+                Console.ForegroundColor = reportColor;
+                Console.WriteLine($"    {primaryReport}");
+                Console.ForegroundColor = consoleDefaultColor;
+
                 foreach (var month in perMonth)
                 {
-                    builder.AppendLine($"    {month.Report}");
                     if (month.Month == null)
                     {
+                        builder.AppendLine($"    {month.Report}");
                         builderTop.AppendLine($"{month.Report}");
                         continue;
                     }
-                    var perDay = computer.GetReportPerDays(month.Year.Value, month.Month.Value);
-                    reportDays.AddRange(perDay.Where(x => x.Day != null));
-                    foreach (var day in perDay)
+
+                    builder.AppendLine($"    {month.Report}");
+                    foreach (var day in month.SubProfits)
                     {
                         builder.AppendLine($"        {day.Report}");
                     }
@@ -218,7 +253,7 @@ namespace SimpleBacktester
                 builder.AppendLine();
                 builder.AppendLine();
 
-                Visualize(backtest, computer, strategy, maxInventory, report, 
+                Visualize(backtest, computer, strategy, maxInventory, primaryReport, 
                     reportDays.ToArray(), 
                     perMonth.Where(x => x.Month.HasValue).ToArray());
             }
@@ -231,14 +266,30 @@ namespace SimpleBacktester
 
         private static RangeBarModel[] LoadBars(BacktestConfig config, string file)
         {
-            using var reader = new StreamReader(file);
-            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            CsvReader csv = null;
+
+            if (file.Contains(".gz", StringComparison.OrdinalIgnoreCase))
+            {
+                var fStream = new FileStream(file, FileMode.Open);
+                var gzStream = new GZipStream(fStream, CompressionMode.Decompress);
+                var reader = new StreamReader(gzStream);
+                csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                var reader = new StreamReader(file);
+                csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            }
+
             csv.Configuration.PrepareHeaderForMatch = (header, index) => header.ToLower();
             csv.Configuration.HeaderValidated = null;
             csv.Configuration.MissingFieldFound = null;
             var bars = csv.GetRecords<RangeBarModel>().ToArray();
             FixTimestamp(config, bars);
             var ordered = bars.OrderBy(x => x.TimestampDate).ToArray();
+
+            csv.Dispose();
+
             return ordered;
         }
 
@@ -363,7 +414,7 @@ namespace SimpleBacktester
                 HasSeconds = true,
                 SecondsMultipliers = new []{"1"},
                 HasNoVolume = false,
-                SupportedResolutions = new []{"1S","30S","1","60","120","240","D","2D","3D","W","3W","M","6M"},
+                SupportedResolutions = new []{"1S","15S","30S","1","5","60","120","240","D","2D","3D","W","3W","M","6M"},
                 CurrencyCode = backtest.QuoteSymbol,
                 OriginalCurrencyCode = backtest.QuoteSymbol,
                 VolumePrecision = 2
@@ -385,6 +436,9 @@ namespace SimpleBacktester
                     Volume = x.Volume
                 })
                 .ToArray();
+
+            FixOhlc(convertedBars);
+
             MyTvProvider.Bars[ticker] = convertedBars;
 
             var trades = computer.Trades;
@@ -410,6 +464,27 @@ namespace SimpleBacktester
             MyTvProvider.Marks[ticker] = marks;
             MyTvProvider.Bars[tickerBuysTrades] = tradeBuyBars;
             MyTvProvider.Bars[tickerSellsTrades] = tradeSellBars;
+        }
+
+        private static void FixOhlc(TvBar[] convertedBars)
+        {
+            for (int i = 1; i < convertedBars.Length; i++)
+            {
+                var prev = convertedBars[i - 1];
+                var curr = convertedBars[i];
+
+                if (curr.High == null || curr.High <= 0)
+                    curr.High = prev.Close;
+
+                if (curr.Low == null || curr.Low <= 0)
+                    curr.Low = prev.Close;
+
+                if (curr.Open == null || curr.Open <= 0)
+                    curr.Open = prev.Close;
+
+                if (curr.Close <= 0)
+                    curr.Close = prev.Close;
+            }
         }
 
         private static TvBar[] MergeBarsWithTrades(TvBar[] convertedBars, TradeModel[] trades)

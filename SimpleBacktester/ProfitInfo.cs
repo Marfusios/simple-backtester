@@ -47,14 +47,26 @@ namespace SimpleBacktester
 
         public double WinRate { get; set; }
 
+        public double? MaxDrawdownPercentage { get; set; }
+        public double? ProfitPercentage { get; set; }
+
+        public ProfitInfo[] SubProfits { get; set; } = new ProfitInfo[0];
+
         public override string ToString()
         {
             var feeString = DisplayWithFee ? $"(with fee: {PnlWithFee:#.00} {QuoteSymbol})" : string.Empty;
+            var profitString = ProfitPercentage.HasValue ? $" ({ProfitPercentage*100:F}%)" : string.Empty;
+
             return $"trades {TradesCount,5} " +
                    $"(b: {BuysCount,5}/{AverageBuyPrice,8:#.00} {QuoteSymbol}, s: {SellsCount,5}/{AverageSellPrice,8:#.00} {QuoteSymbol}), " +
-                   $"Win: {(WinRate*100):#.00}%, " +
-                   $"Inv: {CurrentInventory * OrderSize} {BaseSymbol} (max: {MaxInventory * OrderSize}/{MaxInventoryLimit * OrderSize} {BaseSymbol}), " +
-                   $"Pnl: {Pnl,10:#.00} {QuoteSymbol} {feeString}";
+                   $"Win: {(WinRate*100),7:#.00}%, " +
+                   $"MDD: {(MaxDrawdownPercentage.HasValue ? DisplayMaxDD(MaxDrawdownPercentage.Value) : "       ")}, " +
+                   $"Pnl: {Pnl,10:#.00} {QuoteSymbol}{profitString} {feeString}";
+        }
+
+        private string DisplayMaxDD(double maxDrawdownPercentage)
+        {
+            return $"{maxDrawdownPercentage*100,7:#.00}%";
         }
 
         public ProfitInfo Clone()

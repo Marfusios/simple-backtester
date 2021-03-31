@@ -2,7 +2,7 @@
 
 namespace SimpleBacktester.Strategies
 {
-    public class NaiveFollowerStrategy : IStrategy
+    public class NaiveFollowerStrategy : ITakerStrategy
     {
         private readonly bool _againstTrend;
         private RangeBarModel _lastBar;

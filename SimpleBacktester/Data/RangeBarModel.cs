@@ -40,16 +40,49 @@ namespace SimpleBacktester.Data
 
         public double? Mid => (Bid + Ask) * 0.5;
 
+        /// <summary>
+        /// Used for TAKER strategy (SELL order)
+        /// </summary>
         public double? Bid { get; set; }
+
+        /// <summary>
+        /// Used for TAKER strategy (BUY order)
+        /// </summary>
         public double? Ask { get; set; }
 
         public double? Open { get; set; }
+
+        /// <summary>
+        /// Used for MAKER strategy (ASK order) when 'HighBuy' is not available
+        /// </summary>
         public double? High { get; set; }
+
+        /// <summary>
+        /// Used for MAKER strategy (BID order) when 'LowSell' is not available
+        /// </summary>
         public double? Low { get; set; }
         public double? Close { get; set; }
 
+
+        /// <summary>
+        /// Used for MAKER strategy (ASK order)
+        /// </summary>
+        [Name("high_buy")]
+        public double? HighBuy { get; set; }
+
+        /// <summary>
+        /// Used for MAKER strategy (BID order)
+        /// </summary>
+        [Name("low_sell")]
+        public double? LowSell { get; set; }
+
+
         public double? Volume { get; set; }
 
+
+        /// <summary>
+        /// Used as fallback for TAKER strategy as execution price instead of 'Bid' or 'Ask'
+        /// </summary>
         [Ignore] 
         public double CurrentPrice => Close ?? Mid ?? 0;
 
@@ -116,5 +149,15 @@ namespace SimpleBacktester.Data
 
         [Name("mid_change")]
         public double? MidChange { get; set; }
+
+
+
+
+        [Name("ob_liquidity_bid")]
+        public double? ObLiquidityBid { get; set; }
+
+        [Name("ob_liquidity_ask")]
+        public double? ObLiquidityAsk { get; set; }
+
     }
 }

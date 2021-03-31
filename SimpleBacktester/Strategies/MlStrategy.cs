@@ -4,7 +4,7 @@ using SimpleBacktester.Data;
 
 namespace SimpleBacktester.Strategies
 {
-    public class MlStrategy : IStrategy
+    public class MlStrategy : ITakerStrategy
     {
         private readonly PredictionEngine<RangeBar, RangeBarPrediction> _predictionEngine;
         private RangeBarModel _prevBar;
