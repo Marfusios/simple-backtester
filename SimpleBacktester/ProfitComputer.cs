@@ -27,7 +27,7 @@ namespace SimpleBacktester
         private int _currentInventory;
         private int _maxInventory;
 
-        private List<PlacedOrder> _placedOrders = new List<PlacedOrder>();
+        private readonly List<PlacedOrder> _placedOrders = new List<PlacedOrder>();
 
         public ProfitComputer(IStrategy strategy, BacktestConfig config, int? maxLimitInventory)
         {
@@ -151,7 +151,7 @@ namespace SimpleBacktester
             EvaluatePreviousOrders(bar);
 
             var newPlacedOrders = strategy.Decide(bar, _currentInventoryAbs, _placedOrders.ToArray());
-            
+
             _placedOrders.Clear();
             _placedOrders.AddRange(newPlacedOrders);
 
@@ -163,13 +163,13 @@ namespace SimpleBacktester
             if (_placedOrders.Count <= 0)
                 return;
 
-            var highPrice = bar.HighBuy ?? bar.High;
-            var lowPrice = bar.LowSell ?? bar.Low;
+            var highPrice = bar.HighBuy; // ?? bar.High;
+            var lowPrice = bar.LowSell; // ?? bar.Low;
 
             foreach (var placedOrder in _placedOrders.ToArray())
             {
                 var orderPrice = placedOrder.Price;
-                var orderAmount = placedOrder.Amount;
+                var orderAmount = placedOrder.Amount ?? _config.Amount ?? 1;
                 var positionState = PositionState.Open;
 
                 if (placedOrder.Side == OrderSide.Bid)
@@ -193,7 +193,7 @@ namespace SimpleBacktester
 
                     if (lowPrice == null || lowPrice > orderPrice)
                     {
-                        // no BUY trade, price was too high
+                        // no SELL trade occurred or price was too high
                         continue;
                     }
 
@@ -229,12 +229,12 @@ namespace SimpleBacktester
 
                         if (_currentInventoryAbs < -1e-6)
                             positionState = PositionState.Increase;
-                        
+
                     }
 
                     if (highPrice == null || highPrice < orderPrice)
                     {
-                        // no SELL trade, price was too low
+                        // no BUY trade occurred or price was too low
                         continue;
                     }
 
@@ -309,14 +309,14 @@ namespace SimpleBacktester
             {
                 var group = grouped[i];
                 var nextTrades = grouped
-                    .Skip(i+1)
+                    .Skip(i + 1)
                     .SelectMany(x => x)
                     .OrderBy(x => x.TimestampDate)
                     .ToArray();
 
                 var trades = group.ToArray();
                 var monthReport = GetReport(trades.ToArray(), nextTrades);
-                if(monthReport == ProfitInfo.Empty)
+                if (monthReport == ProfitInfo.Empty)
                     continue;
 
                 var formatted = $"month: {group.Key.Month:00}/{group.Key.Year}, {monthReport}";
@@ -447,7 +447,7 @@ namespace SimpleBacktester
         private TradeModel[] RemoveOpenedTrades(TradeModel[] trades)
         {
             var firstOpenIndex = trades.FirstOrDefault(x => x.PositionState == PositionState.Open);
-            if(firstOpenIndex == null)
+            if (firstOpenIndex == null)
                 return new TradeModel[0];
 
             return trades
@@ -543,7 +543,7 @@ namespace SimpleBacktester
                 var downtickUptickDowntick = 0;
                 var downtickDowntickUptick = 0;
                 var downtickDowntickDowntick = 0;
-                
+
                 var uuTotal = 0;
                 var udTotal = 0;
                 var duTotal = 0;

@@ -1,4 +1,5 @@
-﻿using SimpleBacktester.Data;
+﻿using System;
+using SimpleBacktester.Data;
 
 namespace SimpleBacktester.Strategies
 {
@@ -24,10 +25,15 @@ namespace SimpleBacktester.Strategies
             //var previousMidChange = _lastMidChange;
             _lastMidChange = bar.CurrentPrice - _lastBar.CurrentPrice;
 
+            //if (Math.Abs(_lastMidChange) < 1)
+            //{
+            //    return Action.Nothing;
+            //}
+
             var lastUp = _lastMidChange >= 0;
             _lastBar = bar;
 
-            if(_againstTrend)
+            if (_againstTrend)
                 return lastUp ? Action.Sell : Action.Buy;
             return lastUp ? Action.Buy : Action.Sell;
         }

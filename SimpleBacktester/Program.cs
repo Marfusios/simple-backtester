@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using CsvHelper;
+using CsvHelper.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using SimpleBacktester.Data;
@@ -65,7 +66,7 @@ namespace SimpleBacktester
             Console.WriteLine($"[RESULT] Reports saved to =============>  '{reportsDirectory}'");
             Console.WriteLine();
 
-            if(!config.RunWebVisualization)
+            if (!config.RunWebVisualization)
                 return;
 
             MyTvProvider.DisplayMarks = config.WebVisualizationDisplayMarks;
@@ -83,7 +84,7 @@ namespace SimpleBacktester
 
         private static void MergeBacktestsWithBase(SimpleBacktesterConfig config)
         {
-            if(config.Backtests == null || !config.Backtests.Any())
+            if (config.Backtests == null || !config.Backtests.Any())
                 throw new Exception("Please configure at least one backtest in appsettings.json");
 
             if (config.Base == null)
@@ -126,7 +127,7 @@ namespace SimpleBacktester
                 .ToArray();
             var strategy =
                 strategies.FirstOrDefault(x => x.Name.Equals(strategyName, StringComparison.OrdinalIgnoreCase));
-            if(strategy == null)
+            if (strategy == null)
                 throw new Exception($"There is no strategy with name '{strategyName}'");
             var parameters = FixParams(strategyParams);
             return (IStrategy)Activator.CreateInstance(strategy, parameters);
@@ -253,8 +254,8 @@ namespace SimpleBacktester
                 builder.AppendLine();
                 builder.AppendLine();
 
-                Visualize(backtest, computer, strategy, maxInventory, primaryReport, 
-                    reportDays.ToArray(), 
+                Visualize(backtest, computer, strategy, maxInventory, primaryReport,
+                    reportDays.ToArray(),
                     perMonth.Where(x => x.Month.HasValue).ToArray());
             }
 
@@ -273,17 +274,14 @@ namespace SimpleBacktester
                 var fStream = new FileStream(file, FileMode.Open);
                 var gzStream = new GZipStream(fStream, CompressionMode.Decompress);
                 var reader = new StreamReader(gzStream);
-                csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+                csv = new CsvReader(reader, GetCsvConfig());
             }
             else
             {
                 var reader = new StreamReader(file);
-                csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+                csv = new CsvReader(reader, GetCsvConfig());
             }
 
-            csv.Configuration.PrepareHeaderForMatch = (header, index) => header.ToLower();
-            csv.Configuration.HeaderValidated = null;
-            csv.Configuration.MissingFieldFound = null;
             var bars = csv.GetRecords<RangeBarModel>().ToArray();
             FixTimestamp(config, bars);
             var ordered = bars.OrderBy(x => x.TimestampDate).ToArray();
@@ -293,9 +291,19 @@ namespace SimpleBacktester
             return ordered;
         }
 
+        private static CsvConfiguration GetCsvConfig()
+        {
+            return new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                PrepareHeaderForMatch = args => args.Header.ToLower(),
+                HeaderValidated = null,
+                MissingFieldFound = null
+            };
+        }
+
         private static void FixTimestamp(BacktestConfig config, RangeBarModel[] bars)
         {
-            if (string.IsNullOrWhiteSpace(config.TimestampType) || 
+            if (string.IsNullOrWhiteSpace(config.TimestampType) ||
                 config.TimestampType == "unix-sec" ||
                 config.TimestampType == "date")
             {
@@ -323,7 +331,7 @@ namespace SimpleBacktester
 
         private static string[] LoadAllFiles(string dirPath, string filePattern)
         {
-            if(!Directory.Exists(dirPath))
+            if (!Directory.Exists(dirPath))
                 return new string[0];
 
             var files = Directory.EnumerateFiles(dirPath, filePattern, SearchOption.AllDirectories);
@@ -341,7 +349,7 @@ namespace SimpleBacktester
             File.WriteAllText(targetFile, report);
         }
 
-        private static void Visualize(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy, 
+        private static void Visualize(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy,
             int maxInv, ProfitInfo report, ProfitInfo[] days, ProfitInfo[] months)
         {
             if (computer == null || backtest.Visualize == null || !backtest.Visualize.Value)
@@ -382,7 +390,7 @@ namespace SimpleBacktester
             chart.Plot(name, nameWithFee, targetFile, totalBars, bars, trades, days, months);
         }
 
-        private static void PrepareWebVisualization(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy, in int maxInv, 
+        private static void PrepareWebVisualization(BacktestConfig backtest, ProfitComputer computer, IStrategy strategy, in int maxInv,
             ProfitInfo report, ProfitInfo profitInfo, ProfitInfo[] days, ProfitInfo[] months)
         {
             if (!backtest.RunWebVisualization ?? false)
@@ -398,7 +406,7 @@ namespace SimpleBacktester
             {
                 Name = symbol,
                 Ticker = ticker,
-                Description = $"{maxInv}, {backtest.FilePattern}, {profitInfo.Pnl:#.00}" ,
+                Description = $"{maxInv}, {backtest.FilePattern}, {profitInfo.Pnl:#.00}",
                 Type = "bitcoin",
                 //ExchangeTraded = "Crypto",
                 //ExchangeListed = "Crypto",
@@ -410,11 +418,11 @@ namespace SimpleBacktester
                 //Session = "0930-1630",
                 Session = "24x7",
                 HasIntraday = true,
-                IntradayMultipliers = new []{ "1","60" },
+                IntradayMultipliers = new[] { "1", "60" },
                 HasSeconds = true,
-                SecondsMultipliers = new []{"1"},
+                SecondsMultipliers = new[] { "1" },
                 HasNoVolume = false,
-                SupportedResolutions = new []{"1S","15S","30S","1","5","60","120","240","D","2D","3D","W","3W","M","6M"},
+                SupportedResolutions = new[] { "1S", "15S", "30S", "1", "5", "60", "120", "240", "D", "2D", "3D", "W", "3W", "M", "6M" },
                 CurrencyCode = backtest.QuoteSymbol,
                 OriginalCurrencyCode = backtest.QuoteSymbol,
                 VolumePrecision = 2

@@ -55,18 +55,19 @@ namespace SimpleBacktester
         public override string ToString()
         {
             var feeString = DisplayWithFee ? $"(with fee: {PnlWithFee:#.00} {QuoteSymbol})" : string.Empty;
-            var profitString = ProfitPercentage.HasValue ? $" ({ProfitPercentage*100:F}%)" : string.Empty;
+            var profitString = ProfitPercentage.HasValue ? $" ({ProfitPercentage * 100:F}%)" : string.Empty;
 
-            return $"trades {TradesCount,5} " +
+            return $"({MaxInventory,2:##.#}) " +
+                   $"trades: {TradesCount,5} " +
                    $"(b: {BuysCount,5}/{AverageBuyPrice,8:#.00} {QuoteSymbol}, s: {SellsCount,5}/{AverageSellPrice,8:#.00} {QuoteSymbol}), " +
-                   $"Win: {(WinRate*100),7:#.00}%, " +
+                   $"Win: {(WinRate * 100),7:#.00}%, " +
                    $"MDD: {(MaxDrawdownPercentage.HasValue ? DisplayMaxDD(MaxDrawdownPercentage.Value) : "       ")}, " +
                    $"Pnl: {Pnl,10:#.00} {QuoteSymbol}{profitString} {feeString}";
         }
 
         private string DisplayMaxDD(double maxDrawdownPercentage)
         {
-            return $"{maxDrawdownPercentage*100,7:#.00}%";
+            return $"{maxDrawdownPercentage * 100,7:#.00}%";
         }
 
         public ProfitInfo Clone()

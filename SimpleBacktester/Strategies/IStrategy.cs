@@ -18,16 +18,16 @@ namespace SimpleBacktester.Strategies
 
     public class PlacedOrder
     {
-        public PlacedOrder(OrderSide side, double price, double amount)
+        public PlacedOrder(OrderSide side, double price, double? amount)
         {
             Side = side;
             Price = Math.Abs(price);
-            Amount = Math.Abs(amount);
+            Amount = amount == null ? (double?)null : Math.Abs(amount.Value);
         }
 
         public OrderSide Side { get; }
         public double Price { get; }
-        public double Amount { get; }
+        public double? Amount { get; }
     }
 
     public interface IStrategy

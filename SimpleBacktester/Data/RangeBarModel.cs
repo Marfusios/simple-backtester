@@ -83,7 +83,7 @@ namespace SimpleBacktester.Data
         /// <summary>
         /// Used as fallback for TAKER strategy as execution price instead of 'Bid' or 'Ask'
         /// </summary>
-        [Ignore] 
+        [Ignore]
         public double CurrentPrice => Close ?? Mid ?? 0;
 
         [Ignore]
@@ -103,54 +103,40 @@ namespace SimpleBacktester.Data
 
         // TODO: make generic
         [Name("timestamp_diff_ms")]
-        public double TimestampDiffMs { get; set; }
+        public double? TimestampDiffMs { get; set; }
 
-        [Name("order_book_inserted_bid_count")]
-        public int ObInsertedCountBid { get; set; }
+        [Name("ob_insert_count_bid")]
+        public int? ObInsertedCountBid { get; set; }
 
-        [Name("order_book_inserted_ask_count")]
-        public int ObInsertedCountAsk { get; set; }
-
-
-        [Name("order_book_updated_bid_count")]
-        public int ObUpdatedCountBid { get; set; }
-
-        [Name("order_book_updated_ask_count")]
-        public int ObUpdatedCountAsk { get; set; }
+        [Name("ob_insert_count_ask")]
+        public int? ObInsertedCountAsk { get; set; }
 
 
-        [Name("order_book_deleted_bid_count")]
-        public int ObDeletedCountBid { get; set; }
+        [Name("ob_update_count_bid")]
+        public int? ObUpdatedCountBid { get; set; }
 
-        [Name("order_book_deleted_ask_count")]
-        public int ObDeletedCountAsk { get; set; }
-
-
-        [Name("buy_volume")]
-        public double BuyVolume { get; set; }
-
-        [Name("sell_volume")]
-        public double SellVolume { get; set; }
+        [Name("ob_update_count_ask")]
+        public int? ObUpdatedCountAsk { get; set; }
 
 
-        [Name("price_changed_up_count")]
-        public double PriceChangedUpCount { get; set; }
+        [Name("ob_delete_count_bid")]
+        public int? ObDeletedCountBid { get; set; }
 
-        [Name("price_changed_down_count")]
-        public double PriceChangedDownCount { get; set; }
+        [Name("ob_delete_count_ask")]
+        public int? ObDeletedCountAsk { get; set; }
 
+        [Name("ob_delete_volume_bid")]
+        public double? ObDeletedVolumeBid { get; set; }
 
-        [Name("buy_count")]
-        public double BuyCount { get; set; }
-
-        [Name("sell_count")]
-        public double SellCount { get; set; }
-
-
-        [Name("mid_change")]
-        public double? MidChange { get; set; }
+        [Name("ob_delete_volume_ask")]
+        public double? ObDeletedVolumeAsk { get; set; }
 
 
+        [Name("ob_update_volume_diff_bid")]
+        public double? ObUpdatedVolumeDiffBid { get; set; }
+
+        [Name("ob_update_volume_diff_ask")]
+        public double? ObUpdatedVolumeDiffAsk { get; set; }
 
 
         [Name("ob_liquidity_bid")]
@@ -159,5 +145,29 @@ namespace SimpleBacktester.Data
         [Name("ob_liquidity_ask")]
         public double? ObLiquidityAsk { get; set; }
 
+
+        [Name("volume_buy")]
+        public double? BuyVolume { get; set; }
+
+        [Name("volume_sell")]
+        public double? SellVolume { get; set; }
+
+
+        [Name("price_change_count_up")]
+        public int? PriceChangedUpCount { get; set; }
+
+        [Name("price_change_count_down")]
+        public int? PriceChangedDownCount { get; set; }
+
+
+        [Name("trade_count_buy")]
+        public int? BuyCount { get; set; }
+
+        [Name("trade_count_sell")]
+        public int? SellCount { get; set; }
+
+
+        [Name("mid_change")]
+        public double? MidChange { get; set; }
     }
 }

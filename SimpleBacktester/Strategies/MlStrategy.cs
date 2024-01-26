@@ -36,17 +36,17 @@ namespace SimpleBacktester.Strategies
             }
 
             var convertedBar = new RangeBar();
-            convertedBar.VolumeRate = ComputeRate(bar.BuyVolume, bar.SellVolume);
-            convertedBar.CountRate = ComputeRate(bar.BuyCount, bar.SellCount);
-            convertedBar.ChangeRate = ComputeRate(bar.PriceChangedUpCount, bar.PriceChangedDownCount);
-            convertedBar.InsertedRate = ComputeRate(bar.ObInsertedCountBid, bar.ObInsertedCountAsk);
-            convertedBar.UpdatedRate = ComputeRate(bar.ObUpdatedCountBid, bar.ObUpdatedCountAsk);
-            convertedBar.DeletedRate = ComputeRate(bar.ObDeletedCountBid, bar.ObDeletedCountAsk);
+            //convertedBar.VolumeRate = ComputeRate(bar.BuyVolume, bar.SellVolume);
+            //convertedBar.CountRate = ComputeRate(bar.BuyCount, bar.SellCount);
+            //convertedBar.ChangeRate = ComputeRate(bar.PriceChangedUpCount, bar.PriceChangedDownCount);
+            //convertedBar.InsertedRate = ComputeRate(bar.ObInsertedCountBid, bar.ObInsertedCountAsk);
+            //convertedBar.UpdatedRate = ComputeRate(bar.ObUpdatedCountBid, bar.ObUpdatedCountAsk);
+            //convertedBar.DeletedRate = ComputeRate(bar.ObDeletedCountBid, bar.ObDeletedCountAsk);
 
             if (_prevBar != null)
             {
-                convertedBar.MidPrev = (float) _prevBar.CurrentPrice;
-                convertedBar.MidChangePrev = (float) (bar.CurrentPrice - _prevBar.CurrentPrice);
+                convertedBar.MidPrev = (float)_prevBar.CurrentPrice;
+                convertedBar.MidChangePrev = (float)(bar.CurrentPrice - _prevBar.CurrentPrice);
             }
 
             var prediction = _predictionEngine.Predict(convertedBar);
@@ -57,7 +57,7 @@ namespace SimpleBacktester.Strategies
             _prevBar = bar;
 
             if (!string.IsNullOrWhiteSpace(prediction.Prediction))
-            {   
+            {
                 if (prediction.Prediction == "1")
                     return Action.Sell;
                 return Action.Buy;
