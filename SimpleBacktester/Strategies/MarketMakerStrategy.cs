@@ -25,7 +25,8 @@ namespace SimpleBacktester.Strategies
             _spreadMin = spreadMin;
         }
 
-        public PlacedOrder[] Decide(RangeBarModel bar, double inventoryAbsolute, PlacedOrder[] placedOrders)
+        public PlacedOrder[] Decide(RangeBarModel bar, double inventoryAbsolute, int maxInventoryLimit, 
+            PlacedOrder[] placedOrders, PlacedOrder[] executedOrders)
         {
             _barCounter++;
             //if (_skipBars > 0 && _barCounter % _skipBars != 0)

@@ -24,6 +24,10 @@ namespace SimpleBacktester
     {
         static void Main(string[] args)
         {
+            var defaultCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
+            
             var env = args?.FirstOrDefault();
             var envText = string.IsNullOrWhiteSpace(env) ? string.Empty : $"env: {env}";
 

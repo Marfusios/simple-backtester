@@ -42,6 +42,7 @@ namespace SimpleBacktester.Strategies
 
     public interface IMakerStrategy : IStrategy
     {
-        PlacedOrder[] Decide(RangeBarModel bar, double inventoryAbsolute, PlacedOrder[] placedOrders);
+        PlacedOrder[] Decide(RangeBarModel bar, double inventoryAbsolute, int maxInventoryLimit, 
+            PlacedOrder[] placedOrders, PlacedOrder[] executedOrders);
     }
 }

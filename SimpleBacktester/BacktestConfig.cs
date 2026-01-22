@@ -15,7 +15,7 @@
         public bool? DisplayFee { get; set; }
         public int[] MaxInventory { get; set; }
 
-        public bool? Visualize { get; set; } = true;
+        public bool? Visualize { get; set; }
 
         public int? VisualizeLimitBars { get; set; }
         public int? VisualizeSkipBars { get; set; }

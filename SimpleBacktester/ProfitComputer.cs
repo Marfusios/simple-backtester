@@ -18,7 +18,7 @@ namespace SimpleBacktester
         private readonly string _baseSymbol;
         private readonly double _orderSize;
         private readonly double _feePercentage;
-        private readonly int? _maxLimitInventory;
+        private readonly int _maxLimitInventory;
 
         private readonly List<TradeModel> _trades = new List<TradeModel>();
         private readonly List<RangeBarModel> _bars = new List<RangeBarModel>();
@@ -28,8 +28,9 @@ namespace SimpleBacktester
         private int _maxInventory;
 
         private readonly List<PlacedOrder> _placedOrders = new List<PlacedOrder>();
+        private readonly List<PlacedOrder> _executedOrders = new List<PlacedOrder>();
 
-        public ProfitComputer(IStrategy strategy, BacktestConfig config, int? maxLimitInventory)
+        public ProfitComputer(IStrategy strategy, BacktestConfig config, int maxLimitInventory)
         {
             _orderSize = config.Amount ?? 1;
             _strategy = strategy;
@@ -80,7 +81,7 @@ namespace SimpleBacktester
                 }
                 else
                 {
-                    if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                    if (Math.Abs(_currentInventory) >= _maxLimitInventory)
                     {
                         // inventory reached, do nothing
                         return true;
@@ -115,7 +116,7 @@ namespace SimpleBacktester
                 }
                 else
                 {
-                    if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                    if (Math.Abs(_currentInventory) >= _maxLimitInventory)
                     {
                         // inventory reached, do nothing
                         return true;
@@ -150,7 +151,8 @@ namespace SimpleBacktester
 
             EvaluatePreviousOrders(bar);
 
-            var newPlacedOrders = strategy.Decide(bar, _currentInventoryAbs, _placedOrders.ToArray());
+            var newPlacedOrders = strategy.Decide(bar, _currentInventoryAbs, _maxLimitInventory, 
+                _placedOrders.ToArray(), _executedOrders.ToArray());
 
             _placedOrders.Clear();
             _placedOrders.AddRange(newPlacedOrders);
@@ -160,6 +162,8 @@ namespace SimpleBacktester
 
         private void EvaluatePreviousOrders(RangeBarModel bar)
         {
+            _executedOrders.Clear();
+            
             if (_placedOrders.Count <= 0)
                 return;
 
@@ -180,7 +184,7 @@ namespace SimpleBacktester
                     }
                     else
                     {
-                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                        if (Math.Abs(_currentInventory) >= _maxLimitInventory)
                         {
                             // inventory reached, do nothing
                             _placedOrders.Remove(placedOrder);
@@ -211,6 +215,7 @@ namespace SimpleBacktester
                     _trades.Add(trade);
                     LogTrade(trade);
                     _placedOrders.Remove(placedOrder);
+                    _executedOrders.Add(placedOrder);
                 }
                 else
                 {
@@ -220,7 +225,7 @@ namespace SimpleBacktester
                     }
                     else
                     {
-                        if (_maxLimitInventory.HasValue && Math.Abs(_currentInventory) >= _maxLimitInventory.Value)
+                        if (Math.Abs(_currentInventory) >= _maxLimitInventory)
                         {
                             // inventory reached, do nothing
                             _placedOrders.Remove(placedOrder);
@@ -252,6 +257,7 @@ namespace SimpleBacktester
                     _trades.Add(trade);
                     LogTrade(trade);
                     _placedOrders.Remove(placedOrder);
+                    _executedOrders.Add(placedOrder);
                 }
             }
         }
